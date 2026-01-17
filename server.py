@@ -98,8 +98,11 @@ def detect_language(text: str) -> str:
     if any(ch in t for ch in ["¿", "¡"]):
         return "es"
 
-    # common words scoring
-    es_words = {"hola", "como", "estás", "estas", "que", "por", "para", "gracias", "noticias", "hoy", "tu", "usted", "hablas", "espanol", "español"}
+    es_words = {
+        "hola", "como", "cómo", "estas", "estás", "que", "qué", "por", "para",
+        "gracias", "noticia", "noticias", "hoy", "oy", "tu", "usted", "hablas",
+        "espanol", "español", "puede", "puedes"
+    }
     fr_words = {"bonjour", "salut", "merci", "aujourd", "actualité", "actualités", "infos", "vous", "comment", "ça", "ca", "français", "francais"}
     en_words = {"hello", "hi", "thanks", "today", "news", "please", "you", "how", "english"}
 
@@ -108,10 +111,9 @@ def detect_language(text: str) -> str:
     fr_score = sum(1 for w in tokens if w in fr_words)
     en_score = sum(1 for w in tokens if w in en_words)
 
-    # choose best
     best = max([(es_score, "es"), (fr_score, "fr"), (en_score, "en")], key=lambda x: x[0])
     if best[0] == 0:
-        return "fr"  # default
+        return "fr"
     return best[1]
 
 
@@ -126,7 +128,6 @@ def system_prompt_for(lang: str) -> str:
             "You are SNGSLUISGUZMAN AI. Reply ONLY in English. "
             "Be natural, polite, clear, and helpful. Speak like a human."
         )
-    # fr default
     return (
         "Tu es SNGSLUISGUZMAN AI. Réponds UNIQUEMENT en français. "
         "Sois naturel, poli, clair et utile. Parle comme un humain."
@@ -242,21 +243,36 @@ def smart_chat_once(message: str) -> str:
 # NEWS MODE (Google CSE -> Résumé)
 # ─────────────────────────────────────────────────────────────
 def is_news_request(text: str) -> bool:
-    t = (text or "").lower()
+    t = (text or "").lower().strip()
+
+    # Normalisations basiques (fautes fréquentes)
+    t = t.replace("notisia", "noticia")   # faute
+    t = t.replace("notisias", "noticias") # faute
+    t = t.replace(" de oy", " de hoy")    # faute
+    t = t.replace(" noticias oy", " noticias hoy")
+    t = t.replace(" noticia oy", " noticia hoy")
+
     keywords = [
         # FR
         "infos d'aujourd", "info d'aujourd", "les infos d'aujourd", "les info d'aujourd",
         "actualité", "actualites", "actualités", "actu", "journal", "nouvelles d'aujourd",
+        "infos du jour", "actualité du jour", "les infos du jour",
 
         # EN
-        "news today", "today news", "latest news", "headlines",
+        "news today", "today news", "latest news", "headlines", "daily news",
 
-        # ES
-        "noticias de hoy", "noticia de hoy",
-        "dame la noticia", "dame la noticia de hoy",
-        "dame las noticias", "dame las noticias de hoy",
-        "noticias actuales", "noticias del dia", "noticias del día"
+        # ES (avec variantes)
+        "noticias de hoy", "noticia de hoy", "noticias hoy", "noticia hoy",
+        "dame la noticia", "dame las noticias", "dime la noticia", "dime las noticias",
+        "quiero noticias", "quiero la noticia", "quiero las noticias",
+        "noticias del dia", "noticias del día", "noticias actuales",
+        "dame la noticia de hoy", "dame las noticias de hoy",
     ]
+
+    # Règle robuste : si on voit "noticia(s)" + un mot de temps (hoy/today/aujourd)
+    if ("noticia" in t or "noticias" in t) and ("hoy" in t or "today" in t or "aujourd" in t):
+        return True
+
     return any(k in t for k in keywords)
 
 
@@ -309,12 +325,34 @@ def build_news_context(items: List[Dict[str, str]]) -> str:
 
 
 def make_news_prompt(user_message: str, sources_text: str, lang: str) -> str:
+    if lang == "es":
+        instructions = (
+            "Vas a responder a una solicitud de noticias de hoy.\n"
+            "Usa ÚNICAMENTE las FUENTES de abajo.\n"
+            "Haz un resumen claro en 5 a 7 puntos MÁXIMO.\n"
+            "Luego añade una sección 'Enlaces' con las URLs.\n"
+            "No digas que no tienes acceso a noticias: ya tienes fuentes."
+        )
+    elif lang == "en":
+        instructions = (
+            "You will answer a request for today's news.\n"
+            "Use ONLY the SOURCES below.\n"
+            "Write a clear summary in 5 to 7 bullet points MAX.\n"
+            "Then add a 'Links' section with the URLs.\n"
+            "Do not say you cannot access news: you already have sources."
+        )
+    else:
+        instructions = (
+            "Tu vas répondre à une demande d’actualités du jour.\n"
+            "Utilise UNIQUEMENT les SOURCES ci-dessous.\n"
+            "Fais un résumé clair en 5 à 7 points MAX.\n"
+            "Puis ajoute une section 'Liens' avec les URLs.\n"
+            "Ne dis pas que tu n’as pas accès aux actus : tu as déjà des sources."
+        )
+
     return (
         f"{system_prompt_for(lang)}\n\n"
-        "Tu vas répondre à une demande d’actualités du jour.\n"
-        "Utilise UNIQUEMENT les SOURCES ci-dessous.\n"
-        "Fais un résumé clair en 5 à 7 points MAX.\n"
-        "Puis ajoute une section 'Liens' avec les URLs.\n\n"
+        f"{instructions}\n\n"
         f"SOURCES:\n{sources_text}\n\n"
         f"DEMANDE UTILISATEUR: {user_message}"
     )
@@ -381,7 +419,9 @@ async def regenerate(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"ok": False, "new_text": "", "error": "text_vide"}, status_code=400)
 
     lang = detect_language(text)
-    new_text = smart_chat_once(f"{system_prompt_for(lang)}\n\nRéécris le message en gardant le sens, plus clair et plus utile:\n\n{text}")
+    new_text = smart_chat_once(
+        f"{system_prompt_for(lang)}\n\nRéécris le message en gardant le sens, plus clair et plus utile:\n\n{text}"
+    )
     return {"ok": True, "new_text": new_text, "error": None}
 
 
@@ -392,7 +432,7 @@ async def regenerate(payload: Dict[str, Any] = Body(...)):
 async def google_search(q: str = Query(..., min_length=1), num: int = 8):
     if not GOOGLE_API_KEY or not GOOGLE_CSE_CX:
         return JSONResponse(
-            {"error": "Clés Google manquantes", "missing": [k for k in ["GOOGLE_API_KEY","GOOGLE_CSE_CX"] if not os.getenv(k)]},
+            {"error": "Clés Google manquantes", "missing": [k for k in ["GOOGLE_API_KEY", "GOOGLE_CSE_CX"] if not os.getenv(k)]},
             status_code=400,
         )
 
@@ -422,7 +462,7 @@ async def google_search(q: str = Query(..., min_length=1), num: int = 8):
 async def google_images(q: str = Query(..., min_length=1), num: int = 8):
     if not GOOGLE_API_KEY or not GOOGLE_CSE_CX:
         return JSONResponse(
-            {"error": "Clés Google manquantes", "missing": [k for k in ["GOOGLE_API_KEY","GOOGLE_CSE_CX"] if not os.getenv(k)]},
+            {"error": "Clés Google manquantes", "missing": [k for k in ["GOOGLE_API_KEY", "GOOGLE_CSE_CX"] if not os.getenv(k)]},
             status_code=400,
         )
 
