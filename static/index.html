@@ -204,6 +204,7 @@
       display:flex;align-items:center;justify-content:center;font-size:16px;
     }
     .tool-btn:hover{background:var(--hover)}
+    .file-input{display:none}
     textarea{
       width:100%;min-height:60px;max-height:200px;
       padding:16px;background:transparent;border:none;
@@ -397,6 +398,8 @@
       <div class="input-wrapper">
         <div class="input-tools">
           <button class="tool-btn" type="button" onclick="showImageGen()" title="Image (à brancher)">🎨</button>
+          <button class="tool-btn" type="button" onclick="openImageUpload()" title="Envoyer une image">📷</button>
+          <input class="file-input" id="imageUpload" type="file" accept="image/*" />
         </div>
 
         <textarea id="input" placeholder="Envoie un message..."></textarea>
@@ -810,6 +813,64 @@
     setSendingUI(false);
   }
 
+  function openImageUpload(){
+    $('imageUpload').click();
+  }
+
+  function readFileAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('lecture_fichier_failed'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImageUpload(file){
+    if(!file) return;
+    const prompt = window.prompt("Que veux-tu faire avec cette image ? (ex: décrire, analyser, traduire le texte)");
+    if(prompt === null) return;
+
+    const imageDataUrl = await readFileAsDataUrl(file);
+    if(!state.currentChatId) newChat();
+    showMessages();
+
+    const chat = state.chats[state.currentChatId];
+    const userImageMessage = { type: 'image', url: imageDataUrl, prompt: prompt || 'Image envoyée' };
+    chat.messages.push({ role: 'user', content: userImageMessage });
+    chat.updated = Date.now();
+    saveState();
+    renderHistory();
+    addMessageElement('user', userImageMessage);
+
+    const typingEl = addMessageElement('assistant', '');
+    typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    setSendingUI(true);
+    try{
+      const res = await fetch('/api/image_analyze', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ image_data_url: imageDataUrl, prompt })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur analyse image');
+      }
+
+      const reply = data.reply || '';
+      typingEl.innerHTML = formatContent(reply);
+      chat.messages.push({ role: 'assistant', content: reply || '(vide)' });
+      chat.updated = Date.now();
+      saveState();
+      renderHistory();
+    }catch(err){
+      console.error(err);
+      typingEl.textContent = '❌ Erreur image : ' + (err && err.message ? err.message : 'inconnue');
+    }
+    setSendingUI(false);
+  }
+
   const input = $('input');
   input.addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.shiftKey){
@@ -820,6 +881,17 @@
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+  });
+
+  const imageUpload = $('imageUpload');
+  imageUpload.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    try{
+      await handleImageUpload(file);
+    }catch(err){
+      console.error(err);
+    }
   });
 
   loadState();
@@ -840,6 +912,7 @@
   window.toggleModel = toggleModel;
   window.useSuggestion = useSuggestion;
   window.showImageGen = showImageGen;
+  window.openImageUpload = openImageUpload;
   </script>
 
 </body>

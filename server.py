@@ -162,6 +162,30 @@ def openai_chat_once(message: str, lang: str) -> str:
     return (resp.choices[0].message.content or "").strip()
 
 
+def openai_vision_once(prompt: str, image_data_url: str, lang: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    resp = client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt_for(lang)},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_data_url}},
+                ],
+            },
+        ],
+        temperature=0.7,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
 def openai_image_once(prompt: str, size: str) -> str:
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY manquante")
@@ -522,6 +546,24 @@ async def generate_image(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     return {"ok": True, "image_url": image_url, "error": None}
+
+
+@app.post("/api/image_analyze")
+async def analyze_image(payload: Dict[str, Any] = Body(...)):
+    image_data_url = (payload.get("image_data_url") or "").strip()
+    prompt = (payload.get("prompt") or "").strip()
+    if not image_data_url:
+        return JSONResponse({"ok": False, "error": "image_vide"}, status_code=400)
+    if not prompt:
+        prompt = "Décris cette image et réponds clairement."
+
+    lang = detect_language(prompt)
+    try:
+        reply = openai_vision_once(prompt, image_data_url, lang)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "reply": reply, "error": None}
 
 
 # ─────────────────────────────────────────────────────────────
