@@ -117,7 +117,7 @@
     }
     .chat-title{font-size:32px;font-weight:700;margin-bottom:12px}
     .chat-subtitle{font-size:16px;color:var(--textDim);margin-bottom:32px}
-    .suggestions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;max-width:900px;width:100%}
+    .suggestions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;max-width:900px;width:100%;margin-bottom:24px}
     .suggestion{
       padding:16px;border-radius:12px;border:1px solid var(--border);
       background:var(--panel);cursor:pointer;transition:all 0.2s;text-align:left;
@@ -125,6 +125,27 @@
     .suggestion:hover{background:var(--hover);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
     .suggestion-title{font-size:14px;font-weight:600;margin-bottom:4px}
     .suggestion-desc{font-size:12px;color:var(--textDim)}
+    .capabilities{max-width:900px;width:100%;display:grid;gap:12px}
+    .capabilities-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-top:4px;margin-bottom:8px;color:var(--textDim);font-size:13px;
+    }
+    .capability-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;
+    }
+    .capability-card{
+      padding:16px;border-radius:12px;border:1px solid var(--border);
+      background:var(--panel);display:flex;flex-direction:column;gap:12px;
+    }
+    .capability-title{font-size:15px;font-weight:700;display:flex;gap:8px;align-items:center}
+    .capability-list{margin-left:18px;color:var(--textDim);font-size:12px;line-height:1.5}
+    .capability-actions{display:flex;justify-content:flex-end}
+    .capability-btn{
+      padding:8px 12px;border-radius:8px;border:1px solid var(--border);
+      background:var(--panel2);color:var(--text);cursor:pointer;font-size:12px;
+      transition:all 0.2s;
+    }
+    .capability-btn:hover{background:var(--hover)}
 
     .messages{padding:20px;max-width:800px;margin:0 auto;width:100%}
     .message{display:flex;gap:16px;padding:24px 0;animation:slideIn 0.25s ease}
@@ -272,6 +293,91 @@
           <div class="suggestion" onclick="useSuggestion('Crée un plan d\\'affaires pour ma startup')">
             <div class="suggestion-title">💼 Business</div>
             <div class="suggestion-desc">Plan d'affaires pour ma startup</div>
+          </div>
+        </div>
+
+        <div class="capabilities">
+          <div class="capabilities-header">
+            <span>Voici ce que je peux faire pour toi :</span>
+            <span>Choisis un exemple pour démarrer</span>
+          </div>
+
+          <div class="capability-grid">
+            <div class="capability-card">
+              <div class="capability-title">🧠 Intelligence & aide générale</div>
+              <ul class="capability-list">
+                <li>Répondre à tes questions (culture, école, travail, vie quotidienne)</li>
+                <li>Expliquer simplement des choses compliquées</li>
+                <li>Traduire (français, espagnol, anglais…)</li>
+                <li>Corriger et améliorer tes textes</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Explique-moi simplement comment fonctionne l\\'inflation et corrige mon texte après')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">✍️ Création de contenu</div>
+              <ul class="capability-list">
+                <li>Écrire des lettres, mails, CV, discours</li>
+                <li>Créer des chansons, poèmes, histoires</li>
+                <li>Faire des scripts pour TikTok, YouTube, Reels</li>
+                <li>Créer des slogans, descriptions produits, publicités</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Rédige un mail professionnel pour demander un rendez-vous et propose 2 variantes')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">💻 Technologie & business</div>
+              <ul class="capability-list">
+                <li>Aide pour Shopify, réseaux sociaux, marketing</li>
+                <li>Aide en informatique (code, bugs, bots, sites)</li>
+                <li>Calculs (charges, bénéfices, TVA, URSSAF…)</li>
+                <li>Conseils pour vendre en ligne</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Aide-moi à corriger un bug JavaScript et donne-moi un plan marketing simple')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">🎨 Création visuelle</div>
+              <ul class="capability-list">
+                <li>Générer des images (personnages, logos, dessins)</li>
+                <li>Transformer des photos en style dessin / poupée</li>
+                <li>Créer des bannières YouTube, visuels réseaux</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Crée un prompt pour une bannière YouTube moderne pour une chaîne tech')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">📚 Études & examens</div>
+              <ul class="capability-list">
+                <li>Résumés de cours</li>
+                <li>QCM, révisions</li>
+                <li>Mise en situation orale</li>
+                <li>Organisation de planning</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Fais un résumé clair de mon cours et propose un plan de révision sur 7 jours')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">🤖 Automatisation</div>
+              <ul class="capability-list">
+                <li>Créer des bots</li>
+                <li>Aide pour apps</li>
+                <li>Scripts personnalisés</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Propose un bot simple pour automatiser mes réponses Instagram')">Essayer</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
