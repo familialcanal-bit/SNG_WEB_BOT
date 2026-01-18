@@ -197,6 +197,7 @@ def openai_image_once(prompt: str, size: str) -> str:
         model=OPENAI_IMAGE_MODEL,
         prompt=prompt,
         size=size,
+        response_format="b64_json",
     )
     data = resp.data[0]
     b64_json = getattr(data, "b64_json", None) or data.get("b64_json")

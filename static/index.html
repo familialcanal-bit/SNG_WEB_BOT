@@ -146,6 +146,17 @@
       transition:all 0.2s;
     }
     .capability-btn:hover{background:var(--hover)}
+    .feature-library{max-width:900px;width:100%;margin-top:20px;display:flex;flex-direction:column;gap:10px}
+    .feature-library summary{
+      cursor:pointer;font-weight:600;font-size:14px;color:var(--text);
+      background:var(--panel);padding:12px 14px;border-radius:10px;border:1px solid var(--border);
+    }
+    .feature-library details[open] summary{background:var(--hover)}
+    .feature-library details div{
+      border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
+      padding:14px;background:var(--panel2);color:var(--textDim);font-size:12px;line-height:1.6;
+    }
+    .feature-library ul{margin-left:18px}
 
     .messages{padding:20px;max-width:800px;margin:0 auto;width:100%}
     .message{display:flex;gap:16px;padding:24px 0;animation:slideIn 0.25s ease}
@@ -388,6 +399,218 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="feature-library">
+          <details>
+            <summary>🩺 Mode Médecin - Fonctionnalités</summary>
+            <div>
+              <p><strong>Ah oui, excellent ! Voici des idées pour un mode médecin :</strong></p>
+              <ul>
+                <li><strong>Interface spécialisée</strong> : questionnaire médical structuré, historique des symptômes, timeline des événements, tracker de santé intégré, mode urgence/non-urgence, questions de suivi automatiques.</li>
+                <li><strong>Communication</strong> : ton professionnel et empathique, terminologie médicale avec explications simples, questions ciblées (SOCRATES : Site, Onset, Character, Radiation, Associated symptoms, Timing, Exacerbating/relieving factors, Severity), reformulation pour vérification, résumé de consultation.</li>
+                <li><strong>Anamnèse structurée</strong> : motif de consultation, histoire de la maladie actuelle, antécédents médicaux, antécédents chirurgicaux, antécédents familiaux, allergies, médicaments actuels, habitudes de vie (tabac/alcool/sport).</li>
+                <li><strong>Analyse des symptômes</strong> : grille d'évaluation de la douleur (échelle 1-10), durée et évolution, facteurs aggravants/soulageants, symptômes associés, signes d'alerte (red flags), évaluation de l'urgence.</li>
+                <li><strong>Recommandations</strong> : conseil de consulter un médecin (avec degré d'urgence), spécialiste suggéré si pertinent, examens potentiels à discuter avec le médecin, mesures d'urgence si nécessaire, conseils d'auto-soin appropriés.</li>
+                <li><strong>Disclaimers clairs</strong> : "Je ne suis pas un médecin", "Ceci ne remplace pas une consultation médicale", "En cas d'urgence, appelez le 15/112", limitation de responsabilité visible, rappel régulier pendant la conversation.</li>
+                <li><strong>Tracker médical</strong> : journal des symptômes, tracker de médicaments avec rappels, carnet de vaccination, historique de consultations, mesures vitales (tension, température, poids), allergies et intolérances.</li>
+                <li><strong>Base de connaissances</strong> : explications de pathologies courantes, informations sur les médicaments (posologie, effets secondaires), examens médicaux expliqués, premiers secours, gestes d'urgence.</li>
+                <li><strong>Prévention</strong> : rappels de dépistages selon l'âge, conseils d'hygiène de vie, facteurs de risque, calendrier vaccinal, check-up recommandés.</li>
+                <li><strong>Format de sortie</strong> : résumé de la conversation exportable pour le médecin, liste de questions à poser au médecin, compte-rendu structuré, timeline des symptômes visualisée.</li>
+                <li><strong>Sécurité</strong> : détection de situations d'urgence (douleur thoracique, AVC, etc.), redirection immédiate vers urgences si nécessaire, pas de diagnostic posé, pas de prescription, refus de remplacer un avis médical.</li>
+                <li><strong>Aspects légaux</strong> : conformité RGPD pour données de santé, chiffrement des données sensibles, option d'anonymisation, export sécurisé, suppression des données sur demande.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>✍️ Texte & Écriture</summary>
+            <div>
+              <ul>
+                <li>Correcteur orthographique, reformulateur, résumeur, générateur de titres, générateur d'emails, rédacteur de CV, traducteur, compteur de mots, analyseur de lisibilité, générateur de lorem ipsum, extracteur de mots-clés, détecteur de langue, simplificateur de texte, générateur de slogans, paraphraseur.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>💻 Code & Dev</summary>
+            <div>
+              <ul>
+                <li>Générateur de code, formatter, syntax highlighter, minifier, beautifier, convertisseur de code, générateur de regex, testeur de regex, générateur de JSON, validator JSON, encoder/decoder base64, hash generator, color picker, gradient generator, convertisseur d'unités CSS, générateur de UUID, timestamp converter.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🧮 Calculateurs</summary>
+            <div>
+              <ul>
+                <li>Calculatrice scientifique, convertisseur d'unités, calculateur de pourcentage, calculateur d'IMC, calculateur de prêt, convertisseur de devises, calculateur de pourboire, calculateur de date, compteur de jours, calculateur de temps écoulé, calculateur de TVA, règle de trois, moyenne/médiane.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>⚡ Productivité</summary>
+            <div>
+              <ul>
+                <li>To-do list, notes rapides, timer pomodoro, chronomètre, compte à rebours, générateur de mots de passe, testeur de force de mot de passe, générateur de QR code, lecteur de QR code, shortener d'URL, tracker d'habitudes.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📁 Fichiers</summary>
+            <div>
+              <ul>
+                <li>Convertisseur PDF en texte, compresseur d'images, redimensionneur d'images, convertisseur de formats image, merger PDF, splitter PDF, extracteur de texte, lecteur CSV, générateur CSV, convertisseur JSON/XML/YAML.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🎮 Jeux simples</summary>
+            <div>
+              <ul>
+                <li>Morpion, pendu, dés virtuels, pile ou face, pierre-papier-ciseaux, memory, quiz, mots mêlés, sudoku simple, jeu du nombre, devinettes, trivia.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🔤 Utilitaires texte</summary>
+            <div>
+              <ul>
+                <li>Compteur de caractères, inverseur de texte, UPPERCASE/lowercase, générateur de texte aléatoire, mélangeur de mots, générateur de mots de passe mémorables, générateur de noms, générateur d'usernames, détecteur de palindromes, calculateur de distance Levenshtein.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📊 Data & Visualisation</summary>
+            <div>
+              <ul>
+                <li>Créateur de graphiques (barres, lignes, camembert), tableaux interactifs, calculateur de statistiques basiques, générateur de tableaux, formateur de données, parser CSV, exporteur de données.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>💰 Finance perso</summary>
+            <div>
+              <ul>
+                <li>Tracker de dépenses, calculateur de budget, calculateur d'intérêts composés, comparateur de prix, calculateur d'économies, split de facture, convertisseur crypto.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>❤️ Santé basique</summary>
+            <div>
+              <ul>
+                <li>Tracker de calories, calculateur de macros, timer d'hydration, tracker de poids, journal d'humeur, tracker de sommeil (manuel), calculateur de FCM, calculateur de pas en distance.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📣 Réseaux sociaux</summary>
+            <div>
+              <ul>
+                <li>Générateur de captions, générateur de hashtags, compteur de caractères Twitter, planificateur de posts (interface), générateur de threads, bio generator, username checker.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🧩 Markdown & Formatting</summary>
+            <div>
+              <ul>
+                <li>Éditeur markdown, preview markdown, générateur de tableaux markdown, convertisseur HTML to Markdown, générateur de README, générateur de badges, TOC generator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>⏰ Temps & Dates</summary>
+            <div>
+              <ul>
+                <li>Convertisseur de fuseaux horaires, calculateur d'âge, calculateur de durée, générateur de calendrier, jour de la semaine finder, week number calculator, business days calculator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🌐 Web utilities</summary>
+            <div>
+              <ul>
+                <li>Meta tags generator, Open Graph generator, sitemap generator, robots.txt generator, .htaccess generator, responsive tester (simulation), Lorem ipsum generator, placeholder image generator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📝 Texte créatif</summary>
+            <div>
+              <ul>
+                <li>Générateur d'histoires simples, générateur de noms de personnages, lanceur de dés RPG, générateur de prompts d'écriture, générateur de titres de livres, rhyme finder, générateur d'anagrammes.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🧪 APIs & Testing</summary>
+            <div>
+              <ul>
+                <li>API tester, JSON formatter, XML formatter, HTTP status code explainer, user agent parser, IP info lookup, ping tester, DNS lookup simulator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📐 Math</summary>
+            <div>
+              <ul>
+                <li>Solveur d'équations simples, calculateur de fractions, convertisseur de bases (binaire/hexa/decimal), calculateur de PGCD/PPCM, factorisation, générateur de nombres premiers, calculateur de probabilités.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📦 Organisation</summary>
+            <div>
+              <ul>
+                <li>Kanban board, liste de courses, planificateur de repas, liste de valise, bucket list, reading list, watchlist, wishlist.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📚 Learning</summary>
+            <div>
+              <ul>
+                <li>Flashcards, quiz maker, timer d'étude, tracker de lecture, générateur de questions, conjugueur de verbes, tableau de conversion, periodic table interactive.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🎲 Random generators</summary>
+            <div>
+              <ul>
+                <li>Générateur de citations, générateur de blagues, générateur de compliments, générateur de défis, wheel of fortune, random picker, team randomizer, secret santa.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🔧 String manipulation</summary>
+            <div>
+              <ul>
+                <li>Remove duplicates, sort lines, reverse text, find and replace, trim whitespace, remove empty lines, add line numbers, wrap text, case converter.</li>
+              </ul>
+            </div>
+          </details>
         </div>
       </div>
 
