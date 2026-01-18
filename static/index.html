@@ -734,6 +734,17 @@
         throw new Error(data.details || data.error || 'Erreur serveur');
       }
 
+      if(data.image_url){
+        const imageMessage = { type: 'image', url: data.image_url, prompt: data.prompt || message };
+        element.innerHTML = formatContent(imageMessage);
+        const chat = state.chats[state.currentChatId];
+        chat.messages.push({ role: 'assistant', content: imageMessage });
+        chat.updated = Date.now();
+        saveState();
+        renderHistory();
+        return;
+      }
+
       const reply = data.reply || '';
       element.innerHTML = formatContent(reply);
 

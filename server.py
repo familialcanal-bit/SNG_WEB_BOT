@@ -302,6 +302,34 @@ def is_news_request(text: str) -> bool:
     return any(k in t for k in keywords)
 
 
+def is_image_request(text: str) -> bool:
+    t = (text or "").lower().strip()
+    keywords = [
+        "génère une image", "genere une image", "génère moi une image", "genere moi une image",
+        "crée une image", "cree une image", "fais une image", "faire une image",
+        "génère un visuel", "genere un visuel", "crée un visuel", "cree un visuel",
+        "create an image", "generate an image", "make an image", "image generation",
+        "crear una imagen", "genera una imagen", "generar una imagen", "haz una imagen",
+    ]
+    return any(k in t for k in keywords)
+
+
+def normalize_image_prompt(text: str) -> str:
+    t = (text or "").strip()
+    lowers = t.lower()
+    prefixes = [
+        "génère une image", "genere une image", "génère moi une image", "genere moi une image",
+        "crée une image", "cree une image", "fais une image", "faire une image",
+        "génère un visuel", "genere un visuel", "crée un visuel", "cree un visuel",
+        "create an image", "generate an image", "make an image", "image generation",
+        "crear una imagen", "genera una imagen", "generar una imagen", "haz una imagen",
+    ]
+    for prefix in prefixes:
+        if lowers.startswith(prefix):
+            return t[len(prefix):].strip(" :,-")
+    return t
+
+
 async def google_top_news(user_query: str = "", num: int = 6, lang: str = "fr") -> List[Dict[str, str]]:
     if not GOOGLE_API_KEY or not GOOGLE_CSE_CX:
         return []
@@ -393,6 +421,16 @@ async def chat(payload: Dict[str, Any] = Body(...)):
     if not message:
         return JSONResponse({"ok": False, "reply": "", "error": "message_vide"}, status_code=400)
 
+    if is_image_request(message):
+        prompt = normalize_image_prompt(message)
+        if not prompt:
+            return JSONResponse({"ok": False, "reply": "", "error": "prompt_vide"}, status_code=400)
+        try:
+            image_url = openai_image_once(prompt, "1024x1024")
+        except Exception as exc:
+            return JSONResponse({"ok": False, "reply": "", "error": str(exc)}, status_code=400)
+        return {"ok": True, "image_url": image_url, "prompt": prompt, "error": None}
+
     if is_news_request(message):
         lang = detect_language(message)
         items = await google_top_news("", num=6, lang=lang)
@@ -415,6 +453,19 @@ async def chat_stream(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"detail": "message vide"}, status_code=400)
 
     async def event_gen():
+        if is_image_request(message):
+            prompt = normalize_image_prompt(message)
+            if not prompt:
+                yield f"data: {json.dumps({'type':'error','data':'prompt_vide'}, ensure_ascii=False)}\n\n"
+                return
+            try:
+                image_url = openai_image_once(prompt, "1024x1024")
+            except Exception as exc:
+                yield f"data: {json.dumps({'type':'error','data':str(exc)}, ensure_ascii=False)}\n\n"
+                return
+            payload = {"type": "image", "data": {"url": image_url, "prompt": prompt}}
+            yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+            return
         if is_news_request(message):
             lang = detect_language(message)
             items = await google_top_news("", num=6, lang=lang)
