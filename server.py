@@ -1,4 +1,5 @@
 import os
+import base64
 import json
 import asyncio
 from datetime import date
@@ -25,6 +26,8 @@ GOOGLE_CSE_CX = os.getenv("GOOGLE_CSE_CX", "").strip()
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
 OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1").strip()
+OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "gpt-4o-mini-tts").strip()
+OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "alloy").strip()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "").strip()
@@ -204,6 +207,31 @@ def openai_image_once(prompt: str, size: str) -> str:
     if not b64_json:
         raise RuntimeError("Image non disponible")
     return f"data:image/png;base64,{b64_json}"
+
+
+def openai_tts_once(text: str, voice: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    resp = client.audio.speech.create(
+        model=OPENAI_TTS_MODEL,
+        voice=voice or OPENAI_TTS_VOICE,
+        input=text,
+        response_format="mp3",
+    )
+    audio_bytes = None
+    if hasattr(resp, "read"):
+        audio_bytes = resp.read()
+    elif hasattr(resp, "content"):
+        audio_bytes = resp.content
+    else:
+        audio_bytes = bytes(resp)
+
+    b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
+    return f"data:audio/mpeg;base64,{b64_audio}"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -565,6 +593,23 @@ async def analyze_image(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     return {"ok": True, "reply": reply, "error": None}
+
+
+@app.post("/api/tts")
+async def tts(payload: Dict[str, Any] = Body(...)):
+    text = (payload.get("text") or "").strip()
+    voice = (payload.get("voice") or OPENAI_TTS_VOICE).strip()
+    if not text:
+        return JSONResponse({"ok": False, "error": "text_vide"}, status_code=400)
+    if len(text) > 4000:
+        return JSONResponse({"ok": False, "error": "text_trop_long"}, status_code=400)
+
+    try:
+        audio_url = openai_tts_once(text, voice)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "audio_url": audio_url, "error": None}
 
 
 # ─────────────────────────────────────────────────────────────

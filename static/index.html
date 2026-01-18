@@ -804,15 +804,21 @@
         <div class="message-actions">
           <button class="msg-btn" type="button">📋 Copier</button>
           <button class="msg-btn" type="button">🔄 Régénérer</button>
+          <button class="msg-btn" type="button">🔊 Voix</button>
         </div>
       </div>
     `;
 
-    const [copyBtn, regenBtn] = msg.querySelectorAll('.msg-btn');
+    const [copyBtn, regenBtn, speakBtn] = msg.querySelectorAll('.msg-btn');
     copyBtn.addEventListener('click', () => copyMessage(copyBtn));
     regenBtn.addEventListener('click', () => regenerateMessage(regenBtn));
+    speakBtn.addEventListener('click', () => speakMessage(speakBtn, content, role));
     if(typeof content === 'object' && content && content.type === 'image'){
       regenBtn.disabled = true;
+      speakBtn.disabled = true;
+    }
+    if(role !== 'assistant'){
+      speakBtn.disabled = true;
     }
     container.appendChild(msg);
     scrollToBottom();
@@ -826,6 +832,49 @@
     navigator.clipboard.writeText(text).catch(()=>{});
     btn.textContent = '✓ Copié';
     setTimeout(() => btn.textContent = '📋 Copier', 1500);
+  }
+
+  let currentAudio = null;
+
+  async function speakMessage(btn, content, role){
+    if(role !== 'assistant') return;
+    if(typeof content !== 'string') return;
+    const text = content.trim();
+    if(!text) return;
+
+    const old = btn.textContent;
+    btn.textContent = '⏳...';
+    btn.disabled = true;
+
+    try{
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur TTS');
+      }
+
+      if(currentAudio){
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      currentAudio = new Audio(data.audio_url);
+      await currentAudio.play();
+    }catch(err){
+      console.error(err);
+      if('speechSynthesis' in window){
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      }else{
+        alert('Voix indisponible: ' + (err.message || 'inconnue'));
+      }
+    }finally{
+      btn.textContent = old;
+      btn.disabled = false;
+    }
   }
 
   async function regenerateMessage(btn){
