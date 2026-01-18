@@ -117,7 +117,7 @@
     }
     .chat-title{font-size:32px;font-weight:700;margin-bottom:12px}
     .chat-subtitle{font-size:16px;color:var(--textDim);margin-bottom:32px}
-    .suggestions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;max-width:900px;width:100%}
+    .suggestions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;max-width:900px;width:100%;margin-bottom:24px}
     .suggestion{
       padding:16px;border-radius:12px;border:1px solid var(--border);
       background:var(--panel);cursor:pointer;transition:all 0.2s;text-align:left;
@@ -125,6 +125,38 @@
     .suggestion:hover{background:var(--hover);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
     .suggestion-title{font-size:14px;font-weight:600;margin-bottom:4px}
     .suggestion-desc{font-size:12px;color:var(--textDim)}
+    .capabilities{max-width:900px;width:100%;display:grid;gap:12px}
+    .capabilities-header{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-top:4px;margin-bottom:8px;color:var(--textDim);font-size:13px;
+    }
+    .capability-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;
+    }
+    .capability-card{
+      padding:16px;border-radius:12px;border:1px solid var(--border);
+      background:var(--panel);display:flex;flex-direction:column;gap:12px;
+    }
+    .capability-title{font-size:15px;font-weight:700;display:flex;gap:8px;align-items:center}
+    .capability-list{margin-left:18px;color:var(--textDim);font-size:12px;line-height:1.5}
+    .capability-actions{display:flex;justify-content:flex-end}
+    .capability-btn{
+      padding:8px 12px;border-radius:8px;border:1px solid var(--border);
+      background:var(--panel2);color:var(--text);cursor:pointer;font-size:12px;
+      transition:all 0.2s;
+    }
+    .capability-btn:hover{background:var(--hover)}
+    .feature-library{max-width:900px;width:100%;margin-top:20px;display:flex;flex-direction:column;gap:10px}
+    .feature-library summary{
+      cursor:pointer;font-weight:600;font-size:14px;color:var(--text);
+      background:var(--panel);padding:12px 14px;border-radius:10px;border:1px solid var(--border);
+    }
+    .feature-library details[open] summary{background:var(--hover)}
+    .feature-library details div{
+      border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;
+      padding:14px;background:var(--panel2);color:var(--textDim);font-size:12px;line-height:1.6;
+    }
+    .feature-library ul{margin-left:18px}
 
     .messages{padding:20px;max-width:800px;margin:0 auto;width:100%}
     .message{display:flex;gap:16px;padding:24px 0;animation:slideIn 0.25s ease}
@@ -146,6 +178,14 @@
       background:var(--panel2);padding:16px;border-radius:8px;
       overflow-x:auto;margin:12px 0;border:1px solid var(--border);
     }
+    .image-message{
+      display:flex;flex-direction:column;gap:10px;
+    }
+    .image-message img{
+      max-width:100%;border-radius:12px;border:1px solid var(--border);
+      box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    }
+    .image-caption{font-size:12px;color:var(--textDim)}
     .message-actions{display:flex;gap:8px;margin-top:12px;opacity:0;transition:opacity 0.2s}
     .message:hover .message-actions{opacity:1}
     .msg-btn{
@@ -175,6 +215,7 @@
       display:flex;align-items:center;justify-content:center;font-size:16px;
     }
     .tool-btn:hover{background:var(--hover)}
+    .file-input{display:none}
     textarea{
       width:100%;min-height:60px;max-height:200px;
       padding:16px;background:transparent;border:none;
@@ -274,6 +315,303 @@
             <div class="suggestion-desc">Plan d'affaires pour ma startup</div>
           </div>
         </div>
+
+        <div class="capabilities">
+          <div class="capabilities-header">
+            <span>Voici ce que je peux faire pour toi :</span>
+            <span>Choisis un exemple pour démarrer</span>
+          </div>
+
+          <div class="capability-grid">
+            <div class="capability-card">
+              <div class="capability-title">🧠 Intelligence & aide générale</div>
+              <ul class="capability-list">
+                <li>Répondre à tes questions (culture, école, travail, vie quotidienne)</li>
+                <li>Expliquer simplement des choses compliquées</li>
+                <li>Traduire (français, espagnol, anglais…)</li>
+                <li>Corriger et améliorer tes textes</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Explique-moi simplement comment fonctionne l\\'inflation et corrige mon texte après')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">✍️ Création de contenu</div>
+              <ul class="capability-list">
+                <li>Écrire des lettres, mails, CV, discours</li>
+                <li>Créer des chansons, poèmes, histoires</li>
+                <li>Faire des scripts pour TikTok, YouTube, Reels</li>
+                <li>Créer des slogans, descriptions produits, publicités</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Rédige un mail professionnel pour demander un rendez-vous et propose 2 variantes')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">💻 Technologie & business</div>
+              <ul class="capability-list">
+                <li>Aide pour Shopify, réseaux sociaux, marketing</li>
+                <li>Aide en informatique (code, bugs, bots, sites)</li>
+                <li>Calculs (charges, bénéfices, TVA, URSSAF…)</li>
+                <li>Conseils pour vendre en ligne</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Aide-moi à corriger un bug JavaScript et donne-moi un plan marketing simple')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">🎨 Création visuelle</div>
+              <ul class="capability-list">
+                <li>Générer des images (personnages, logos, dessins)</li>
+                <li>Transformer des photos en style dessin / poupée</li>
+                <li>Créer des bannières YouTube, visuels réseaux</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Crée un prompt pour une bannière YouTube moderne pour une chaîne tech')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">📚 Études & examens</div>
+              <ul class="capability-list">
+                <li>Résumés de cours</li>
+                <li>QCM, révisions</li>
+                <li>Mise en situation orale</li>
+                <li>Organisation de planning</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Fais un résumé clair de mon cours et propose un plan de révision sur 7 jours')">Essayer</button>
+              </div>
+            </div>
+
+            <div class="capability-card">
+              <div class="capability-title">🤖 Automatisation</div>
+              <ul class="capability-list">
+                <li>Créer des bots</li>
+                <li>Aide pour apps</li>
+                <li>Scripts personnalisés</li>
+              </ul>
+              <div class="capability-actions">
+                <button class="capability-btn" type="button" onclick="useSuggestion('Propose un bot simple pour automatiser mes réponses Instagram')">Essayer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-library">
+          <details>
+            <summary>🩺 Mode Médecin - Fonctionnalités</summary>
+            <div>
+              <p><strong>Ah oui, excellent ! Voici des idées pour un mode médecin :</strong></p>
+              <ul>
+                <li><strong>Interface spécialisée</strong> : questionnaire médical structuré, historique des symptômes, timeline des événements, tracker de santé intégré, mode urgence/non-urgence, questions de suivi automatiques.</li>
+                <li><strong>Communication</strong> : ton professionnel et empathique, terminologie médicale avec explications simples, questions ciblées (SOCRATES : Site, Onset, Character, Radiation, Associated symptoms, Timing, Exacerbating/relieving factors, Severity), reformulation pour vérification, résumé de consultation.</li>
+                <li><strong>Anamnèse structurée</strong> : motif de consultation, histoire de la maladie actuelle, antécédents médicaux, antécédents chirurgicaux, antécédents familiaux, allergies, médicaments actuels, habitudes de vie (tabac/alcool/sport).</li>
+                <li><strong>Analyse des symptômes</strong> : grille d'évaluation de la douleur (échelle 1-10), durée et évolution, facteurs aggravants/soulageants, symptômes associés, signes d'alerte (red flags), évaluation de l'urgence.</li>
+                <li><strong>Recommandations</strong> : conseil de consulter un médecin (avec degré d'urgence), spécialiste suggéré si pertinent, examens potentiels à discuter avec le médecin, mesures d'urgence si nécessaire, conseils d'auto-soin appropriés.</li>
+                <li><strong>Disclaimers clairs</strong> : "Je ne suis pas un médecin", "Ceci ne remplace pas une consultation médicale", "En cas d'urgence, appelez le 15/112", limitation de responsabilité visible, rappel régulier pendant la conversation.</li>
+                <li><strong>Tracker médical</strong> : journal des symptômes, tracker de médicaments avec rappels, carnet de vaccination, historique de consultations, mesures vitales (tension, température, poids), allergies et intolérances.</li>
+                <li><strong>Base de connaissances</strong> : explications de pathologies courantes, informations sur les médicaments (posologie, effets secondaires), examens médicaux expliqués, premiers secours, gestes d'urgence.</li>
+                <li><strong>Prévention</strong> : rappels de dépistages selon l'âge, conseils d'hygiène de vie, facteurs de risque, calendrier vaccinal, check-up recommandés.</li>
+                <li><strong>Format de sortie</strong> : résumé de la conversation exportable pour le médecin, liste de questions à poser au médecin, compte-rendu structuré, timeline des symptômes visualisée.</li>
+                <li><strong>Sécurité</strong> : détection de situations d'urgence (douleur thoracique, AVC, etc.), redirection immédiate vers urgences si nécessaire, pas de diagnostic posé, pas de prescription, refus de remplacer un avis médical.</li>
+                <li><strong>Aspects légaux</strong> : conformité RGPD pour données de santé, chiffrement des données sensibles, option d'anonymisation, export sécurisé, suppression des données sur demande.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>✍️ Texte & Écriture</summary>
+            <div>
+              <ul>
+                <li>Correcteur orthographique, reformulateur, résumeur, générateur de titres, générateur d'emails, rédacteur de CV, traducteur, compteur de mots, analyseur de lisibilité, générateur de lorem ipsum, extracteur de mots-clés, détecteur de langue, simplificateur de texte, générateur de slogans, paraphraseur.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>💻 Code & Dev</summary>
+            <div>
+              <ul>
+                <li>Générateur de code, formatter, syntax highlighter, minifier, beautifier, convertisseur de code, générateur de regex, testeur de regex, générateur de JSON, validator JSON, encoder/decoder base64, hash generator, color picker, gradient generator, convertisseur d'unités CSS, générateur de UUID, timestamp converter.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🧮 Calculateurs</summary>
+            <div>
+              <ul>
+                <li>Calculatrice scientifique, convertisseur d'unités, calculateur de pourcentage, calculateur d'IMC, calculateur de prêt, convertisseur de devises, calculateur de pourboire, calculateur de date, compteur de jours, calculateur de temps écoulé, calculateur de TVA, règle de trois, moyenne/médiane.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>⚡ Productivité</summary>
+            <div>
+              <ul>
+                <li>To-do list, notes rapides, timer pomodoro, chronomètre, compte à rebours, générateur de mots de passe, testeur de force de mot de passe, générateur de QR code, lecteur de QR code, shortener d'URL, tracker d'habitudes.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📁 Fichiers</summary>
+            <div>
+              <ul>
+                <li>Convertisseur PDF en texte, compresseur d'images, redimensionneur d'images, convertisseur de formats image, merger PDF, splitter PDF, extracteur de texte, lecteur CSV, générateur CSV, convertisseur JSON/XML/YAML.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🎮 Jeux simples</summary>
+            <div>
+              <ul>
+                <li>Morpion, pendu, dés virtuels, pile ou face, pierre-papier-ciseaux, memory, quiz, mots mêlés, sudoku simple, jeu du nombre, devinettes, trivia.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🔤 Utilitaires texte</summary>
+            <div>
+              <ul>
+                <li>Compteur de caractères, inverseur de texte, UPPERCASE/lowercase, générateur de texte aléatoire, mélangeur de mots, générateur de mots de passe mémorables, générateur de noms, générateur d'usernames, détecteur de palindromes, calculateur de distance Levenshtein.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📊 Data & Visualisation</summary>
+            <div>
+              <ul>
+                <li>Créateur de graphiques (barres, lignes, camembert), tableaux interactifs, calculateur de statistiques basiques, générateur de tableaux, formateur de données, parser CSV, exporteur de données.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>💰 Finance perso</summary>
+            <div>
+              <ul>
+                <li>Tracker de dépenses, calculateur de budget, calculateur d'intérêts composés, comparateur de prix, calculateur d'économies, split de facture, convertisseur crypto.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>❤️ Santé basique</summary>
+            <div>
+              <ul>
+                <li>Tracker de calories, calculateur de macros, timer d'hydration, tracker de poids, journal d'humeur, tracker de sommeil (manuel), calculateur de FCM, calculateur de pas en distance.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📣 Réseaux sociaux</summary>
+            <div>
+              <ul>
+                <li>Générateur de captions, générateur de hashtags, compteur de caractères Twitter, planificateur de posts (interface), générateur de threads, bio generator, username checker.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🧩 Markdown & Formatting</summary>
+            <div>
+              <ul>
+                <li>Éditeur markdown, preview markdown, générateur de tableaux markdown, convertisseur HTML to Markdown, générateur de README, générateur de badges, TOC generator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>⏰ Temps & Dates</summary>
+            <div>
+              <ul>
+                <li>Convertisseur de fuseaux horaires, calculateur d'âge, calculateur de durée, générateur de calendrier, jour de la semaine finder, week number calculator, business days calculator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🌐 Web utilities</summary>
+            <div>
+              <ul>
+                <li>Meta tags generator, Open Graph generator, sitemap generator, robots.txt generator, .htaccess generator, responsive tester (simulation), Lorem ipsum generator, placeholder image generator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📝 Texte créatif</summary>
+            <div>
+              <ul>
+                <li>Générateur d'histoires simples, générateur de noms de personnages, lanceur de dés RPG, générateur de prompts d'écriture, générateur de titres de livres, rhyme finder, générateur d'anagrammes.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🧪 APIs & Testing</summary>
+            <div>
+              <ul>
+                <li>API tester, JSON formatter, XML formatter, HTTP status code explainer, user agent parser, IP info lookup, ping tester, DNS lookup simulator.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📐 Math</summary>
+            <div>
+              <ul>
+                <li>Solveur d'équations simples, calculateur de fractions, convertisseur de bases (binaire/hexa/decimal), calculateur de PGCD/PPCM, factorisation, générateur de nombres premiers, calculateur de probabilités.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📦 Organisation</summary>
+            <div>
+              <ul>
+                <li>Kanban board, liste de courses, planificateur de repas, liste de valise, bucket list, reading list, watchlist, wishlist.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>📚 Learning</summary>
+            <div>
+              <ul>
+                <li>Flashcards, quiz maker, timer d'étude, tracker de lecture, générateur de questions, conjugueur de verbes, tableau de conversion, periodic table interactive.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🎲 Random generators</summary>
+            <div>
+              <ul>
+                <li>Générateur de citations, générateur de blagues, générateur de compliments, générateur de défis, wheel of fortune, random picker, team randomizer, secret santa.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details>
+            <summary>🔧 String manipulation</summary>
+            <div>
+              <ul>
+                <li>Remove duplicates, sort lines, reverse text, find and replace, trim whitespace, remove empty lines, add line numbers, wrap text, case converter.</li>
+              </ul>
+            </div>
+          </details>
+        </div>
       </div>
 
       <div class="messages" id="messages" style="display:none"></div>
@@ -283,6 +621,8 @@
       <div class="input-wrapper">
         <div class="input-tools">
           <button class="tool-btn" type="button" onclick="showImageGen()" title="Image (à brancher)">🎨</button>
+          <button class="tool-btn" type="button" onclick="openImageUpload()" title="Envoyer une image">📷</button>
+          <input class="file-input" id="imageUpload" type="file" accept="image/*" />
         </div>
 
         <textarea id="input" placeholder="Envoie un message..."></textarea>
@@ -382,6 +722,15 @@
 
   function formatContent(text){
     if(typeof text === 'object' && text && text.__html) return text.__html;
+    if(typeof text === 'object' && text && text.type === 'image' && text.url){
+      const safePrompt = escapeHTML(text.prompt || 'Image générée');
+      return `
+        <div class="image-message">
+          <img src="${text.url}" alt="${safePrompt}" />
+          <div class="image-caption">${safePrompt}</div>
+        </div>
+      `;
+    }
     const safe = escapeHTML(text);
     return safe
       .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code>$2</code></pre>')
@@ -455,23 +804,77 @@
         <div class="message-actions">
           <button class="msg-btn" type="button">📋 Copier</button>
           <button class="msg-btn" type="button">🔄 Régénérer</button>
+          <button class="msg-btn" type="button">🔊 Voix</button>
         </div>
       </div>
     `;
 
-    const [copyBtn, regenBtn] = msg.querySelectorAll('.msg-btn');
+    const [copyBtn, regenBtn, speakBtn] = msg.querySelectorAll('.msg-btn');
     copyBtn.addEventListener('click', () => copyMessage(copyBtn));
     regenBtn.addEventListener('click', () => regenerateMessage(regenBtn));
+    speakBtn.addEventListener('click', () => speakMessage(speakBtn, content, role));
+    if(typeof content === 'object' && content && content.type === 'image'){
+      regenBtn.disabled = true;
+      speakBtn.disabled = true;
+    }
+    if(role !== 'assistant'){
+      speakBtn.disabled = true;
+    }
     container.appendChild(msg);
     scrollToBottom();
     return msg.querySelector('.message-text');
   }
 
   function copyMessage(btn){
-    const text = btn.closest('.message-content').querySelector('.message-text').textContent;
+    const node = btn.closest('.message-content').querySelector('.message-text');
+    const image = node.querySelector('img');
+    const text = image ? image.src : node.textContent;
     navigator.clipboard.writeText(text).catch(()=>{});
     btn.textContent = '✓ Copié';
     setTimeout(() => btn.textContent = '📋 Copier', 1500);
+  }
+
+  let currentAudio = null;
+
+  async function speakMessage(btn, content, role){
+    if(role !== 'assistant') return;
+    if(typeof content !== 'string') return;
+    const text = content.trim();
+    if(!text) return;
+
+    const old = btn.textContent;
+    btn.textContent = '⏳...';
+    btn.disabled = true;
+
+    try{
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur TTS');
+      }
+
+      if(currentAudio){
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      currentAudio = new Audio(data.audio_url);
+      await currentAudio.play();
+    }catch(err){
+      console.error(err);
+      if('speechSynthesis' in window){
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      }else{
+        alert('Voix indisponible: ' + (err.message || 'inconnue'));
+      }
+    }finally{
+      btn.textContent = old;
+      btn.disabled = false;
+    }
   }
 
   async function regenerateMessage(btn){
@@ -606,6 +1009,17 @@
         throw new Error(data.details || data.error || 'Erreur serveur');
       }
 
+      if(data.image_url){
+        const imageMessage = { type: 'image', url: data.image_url, prompt: data.prompt || message };
+        element.innerHTML = formatContent(imageMessage);
+        const chat = state.chats[state.currentChatId];
+        chat.messages.push({ role: 'assistant', content: imageMessage });
+        chat.updated = Date.now();
+        saveState();
+        renderHistory();
+        return;
+      }
+
       const reply = data.reply || '';
       element.innerHTML = formatContent(reply);
 
@@ -628,8 +1042,105 @@
     sendMessage();
   }
 
-  function showImageGen(){
-    alert("🎨 Image : pas encore branché sur le backend. (On peut l’ajouter après)");
+  async function showImageGen(){
+    const prompt = window.prompt("Décris l'image que tu veux générer :");
+    if(!prompt) return;
+
+    if(!state.currentChatId) newChat();
+    showMessages();
+
+    const chat = state.chats[state.currentChatId];
+    chat.messages.push({role: 'user', content: `🎨 Génère une image : ${prompt}`});
+    chat.updated = Date.now();
+    saveState();
+    renderHistory();
+    addMessageElement('user', `🎨 Génère une image : ${prompt}`);
+
+    const typingEl = addMessageElement('assistant', '');
+    typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    setSendingUI(true);
+    try{
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ prompt, size: '1024x1024' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur image');
+      }
+
+      const imageMessage = { type: 'image', url: data.image_url, prompt };
+      typingEl.innerHTML = formatContent(imageMessage);
+      chat.messages.push({ role: 'assistant', content: imageMessage });
+      chat.updated = Date.now();
+      saveState();
+      renderHistory();
+      typingEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }catch(err){
+      console.error(err);
+      typingEl.textContent = '❌ Erreur image : ' + (err && err.message ? err.message : 'inconnue');
+    }
+    setSendingUI(false);
+  }
+
+  function openImageUpload(){
+    $('imageUpload').click();
+  }
+
+  function readFileAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('lecture_fichier_failed'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImageUpload(file){
+    if(!file) return;
+    const prompt = window.prompt("Que veux-tu faire avec cette image ? (ex: décrire, analyser, traduire le texte)");
+    if(prompt === null) return;
+
+    const imageDataUrl = await readFileAsDataUrl(file);
+    if(!state.currentChatId) newChat();
+    showMessages();
+
+    const chat = state.chats[state.currentChatId];
+    const userImageMessage = { type: 'image', url: imageDataUrl, prompt: prompt || 'Image envoyée' };
+    chat.messages.push({ role: 'user', content: userImageMessage });
+    chat.updated = Date.now();
+    saveState();
+    renderHistory();
+    addMessageElement('user', userImageMessage);
+
+    const typingEl = addMessageElement('assistant', '');
+    typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    setSendingUI(true);
+    try{
+      const res = await fetch('/api/image_analyze', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ image_data_url: imageDataUrl, prompt })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur analyse image');
+      }
+
+      const reply = data.reply || '';
+      typingEl.innerHTML = formatContent(reply);
+      chat.messages.push({ role: 'assistant', content: reply || '(vide)' });
+      chat.updated = Date.now();
+      saveState();
+      renderHistory();
+    }catch(err){
+      console.error(err);
+      typingEl.textContent = '❌ Erreur image : ' + (err && err.message ? err.message : 'inconnue');
+    }
+    setSendingUI(false);
   }
 
   const input = $('input');
@@ -642,6 +1153,17 @@
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+  });
+
+  const imageUpload = $('imageUpload');
+  imageUpload.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    try{
+      await handleImageUpload(file);
+    }catch(err){
+      console.error(err);
+    }
   });
 
   loadState();
@@ -662,6 +1184,7 @@
   window.toggleModel = toggleModel;
   window.useSuggestion = useSuggestion;
   window.showImageGen = showImageGen;
+  window.openImageUpload = openImageUpload;
   </script>
 
 </body>

@@ -1,4 +1,5 @@
 import os
+import base64
 import json
 import asyncio
 from datetime import date
@@ -24,6 +25,9 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "").strip()
 GOOGLE_CSE_CX = os.getenv("GOOGLE_CSE_CX", "").strip()
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
+OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1").strip()
+OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "gpt-4o-mini-tts").strip()
+OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "alloy").strip()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "").strip()
@@ -118,19 +122,12 @@ def detect_language(text: str) -> str:
 
 
 def system_prompt_for(lang: str) -> str:
-    if lang == "es":
-        return (
-            "Eres SNGSLUISGUZMAN AI. Responde SOLO en español. "
-            "Sé natural, educado, claro y útil. Habla como un humano."
-        )
-    if lang == "en":
-        return (
-            "You are SNGSLUISGUZMAN AI. Reply ONLY in English. "
-            "Be natural, polite, clear, and helpful. Speak like a human."
-        )
     return (
-        "Tu es SNGSLUISGUZMAN AI. Réponds UNIQUEMENT en français. "
-        "Sois naturel, poli, clair et utile. Parle comme un humain."
+        "You are SNGSLUISGUZMAN AI. Reply in the user's language. "
+        "Be natural, conversational, and highly helpful. Explain clearly, "
+        "offer concrete steps when useful, and ask for clarification if context is missing. "
+        "Keep a friendly, professional tone. "
+        "Do not claim you can do anything outside your capabilities."
     )
 
 
@@ -153,6 +150,75 @@ def openai_chat_once(message: str, lang: str) -> str:
         temperature=0.7,
     )
     return (resp.choices[0].message.content or "").strip()
+
+
+def openai_vision_once(prompt: str, image_data_url: str, lang: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    resp = client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt_for(lang)},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image_data_url}},
+                ],
+            },
+        ],
+        temperature=0.7,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
+def openai_image_once(prompt: str, size: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    resp = client.images.generate(
+        model=OPENAI_IMAGE_MODEL,
+        prompt=prompt,
+        size=size,
+        response_format="b64_json",
+    )
+    data = resp.data[0]
+    b64_json = getattr(data, "b64_json", None) or data.get("b64_json")
+    if not b64_json:
+        raise RuntimeError("Image non disponible")
+    return f"data:image/png;base64,{b64_json}"
+
+
+def openai_tts_once(text: str, voice: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    resp = client.audio.speech.create(
+        model=OPENAI_TTS_MODEL,
+        voice=voice or OPENAI_TTS_VOICE,
+        input=text,
+        response_format="mp3",
+    )
+    audio_bytes = None
+    if hasattr(resp, "read"):
+        audio_bytes = resp.read()
+    elif hasattr(resp, "content"):
+        audio_bytes = resp.content
+    else:
+        audio_bytes = bytes(resp)
+
+    b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
+    return f"data:audio/mpeg;base64,{b64_audio}"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -276,6 +342,34 @@ def is_news_request(text: str) -> bool:
     return any(k in t for k in keywords)
 
 
+def is_image_request(text: str) -> bool:
+    t = (text or "").lower().strip()
+    keywords = [
+        "génère une image", "genere une image", "génère moi une image", "genere moi une image",
+        "crée une image", "cree une image", "fais une image", "faire une image",
+        "génère un visuel", "genere un visuel", "crée un visuel", "cree un visuel",
+        "create an image", "generate an image", "make an image", "image generation",
+        "crear una imagen", "genera una imagen", "generar una imagen", "haz una imagen",
+    ]
+    return any(k in t for k in keywords)
+
+
+def normalize_image_prompt(text: str) -> str:
+    t = (text or "").strip()
+    lowers = t.lower()
+    prefixes = [
+        "génère une image", "genere une image", "génère moi une image", "genere moi une image",
+        "crée une image", "cree une image", "fais une image", "faire une image",
+        "génère un visuel", "genere un visuel", "crée un visuel", "cree un visuel",
+        "create an image", "generate an image", "make an image", "image generation",
+        "crear una imagen", "genera una imagen", "generar una imagen", "haz una imagen",
+    ]
+    for prefix in prefixes:
+        if lowers.startswith(prefix):
+            return t[len(prefix):].strip(" :,-")
+    return t
+
+
 async def google_top_news(user_query: str = "", num: int = 6, lang: str = "fr") -> List[Dict[str, str]]:
     if not GOOGLE_API_KEY or not GOOGLE_CSE_CX:
         return []
@@ -367,6 +461,16 @@ async def chat(payload: Dict[str, Any] = Body(...)):
     if not message:
         return JSONResponse({"ok": False, "reply": "", "error": "message_vide"}, status_code=400)
 
+    if is_image_request(message):
+        prompt = normalize_image_prompt(message)
+        if not prompt:
+            return JSONResponse({"ok": False, "reply": "", "error": "prompt_vide"}, status_code=400)
+        try:
+            image_url = openai_image_once(prompt, "1024x1024")
+        except Exception as exc:
+            return JSONResponse({"ok": False, "reply": "", "error": str(exc)}, status_code=400)
+        return {"ok": True, "image_url": image_url, "prompt": prompt, "error": None}
+
     if is_news_request(message):
         lang = detect_language(message)
         items = await google_top_news("", num=6, lang=lang)
@@ -389,6 +493,19 @@ async def chat_stream(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"detail": "message vide"}, status_code=400)
 
     async def event_gen():
+        if is_image_request(message):
+            prompt = normalize_image_prompt(message)
+            if not prompt:
+                yield f"data: {json.dumps({'type':'error','data':'prompt_vide'}, ensure_ascii=False)}\n\n"
+                return
+            try:
+                image_url = openai_image_once(prompt, "1024x1024")
+            except Exception as exc:
+                yield f"data: {json.dumps({'type':'error','data':str(exc)}, ensure_ascii=False)}\n\n"
+                return
+            payload = {"type": "image", "data": {"url": image_url, "prompt": prompt}}
+            yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+            return
         if is_news_request(message):
             lang = detect_language(message)
             items = await google_top_news("", num=6, lang=lang)
@@ -423,6 +540,63 @@ async def regenerate(payload: Dict[str, Any] = Body(...)):
         f"{system_prompt_for(lang)}\n\nRéécris le message en gardant le sens, plus clair et plus utile:\n\n{text}"
     )
     return {"ok": True, "new_text": new_text, "error": None}
+
+
+# ─────────────────────────────────────────────────────────────
+# IMAGE GENERATION
+# ─────────────────────────────────────────────────────────────
+@app.post("/api/image")
+async def generate_image(payload: Dict[str, Any] = Body(...)):
+    prompt = (payload.get("prompt") or "").strip()
+    size = (payload.get("size") or "1024x1024").strip()
+    if not prompt:
+        return JSONResponse({"ok": False, "error": "prompt_vide"}, status_code=400)
+
+    valid_sizes = {"256x256", "512x512", "1024x1024", "1024x1792", "1792x1024"}
+    if size not in valid_sizes:
+        return JSONResponse({"ok": False, "error": "size_invalide"}, status_code=400)
+
+    try:
+        image_url = openai_image_once(prompt, size)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "image_url": image_url, "error": None}
+
+
+@app.post("/api/image_analyze")
+async def analyze_image(payload: Dict[str, Any] = Body(...)):
+    image_data_url = (payload.get("image_data_url") or "").strip()
+    prompt = (payload.get("prompt") or "").strip()
+    if not image_data_url:
+        return JSONResponse({"ok": False, "error": "image_vide"}, status_code=400)
+    if not prompt:
+        prompt = "Décris cette image et réponds clairement."
+
+    lang = detect_language(prompt)
+    try:
+        reply = openai_vision_once(prompt, image_data_url, lang)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "reply": reply, "error": None}
+
+
+@app.post("/api/tts")
+async def tts(payload: Dict[str, Any] = Body(...)):
+    text = (payload.get("text") or "").strip()
+    voice = (payload.get("voice") or OPENAI_TTS_VOICE).strip()
+    if not text:
+        return JSONResponse({"ok": False, "error": "text_vide"}, status_code=400)
+    if len(text) > 4000:
+        return JSONResponse({"ok": False, "error": "text_trop_long"}, status_code=400)
+
+    try:
+        audio_url = openai_tts_once(text, voice)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "audio_url": audio_url, "error": None}
 
 
 # ─────────────────────────────────────────────────────────────
