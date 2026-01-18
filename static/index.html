@@ -167,6 +167,14 @@
       background:var(--panel2);padding:16px;border-radius:8px;
       overflow-x:auto;margin:12px 0;border:1px solid var(--border);
     }
+    .image-message{
+      display:flex;flex-direction:column;gap:10px;
+    }
+    .image-message img{
+      max-width:100%;border-radius:12px;border:1px solid var(--border);
+      box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    }
+    .image-caption{font-size:12px;color:var(--textDim)}
     .message-actions{display:flex;gap:8px;margin-top:12px;opacity:0;transition:opacity 0.2s}
     .message:hover .message-actions{opacity:1}
     .msg-btn{
@@ -488,6 +496,15 @@
 
   function formatContent(text){
     if(typeof text === 'object' && text && text.__html) return text.__html;
+    if(typeof text === 'object' && text && text.type === 'image' && text.url){
+      const safePrompt = escapeHTML(text.prompt || 'Image générée');
+      return `
+        <div class="image-message">
+          <img src="${text.url}" alt="${safePrompt}" />
+          <div class="image-caption">${safePrompt}</div>
+        </div>
+      `;
+    }
     const safe = escapeHTML(text);
     return safe
       .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre><code>$2</code></pre>')
@@ -568,13 +585,18 @@
     const [copyBtn, regenBtn] = msg.querySelectorAll('.msg-btn');
     copyBtn.addEventListener('click', () => copyMessage(copyBtn));
     regenBtn.addEventListener('click', () => regenerateMessage(regenBtn));
+    if(typeof content === 'object' && content && content.type === 'image'){
+      regenBtn.disabled = true;
+    }
     container.appendChild(msg);
     scrollToBottom();
     return msg.querySelector('.message-text');
   }
 
   function copyMessage(btn){
-    const text = btn.closest('.message-content').querySelector('.message-text').textContent;
+    const node = btn.closest('.message-content').querySelector('.message-text');
+    const image = node.querySelector('img');
+    const text = image ? image.src : node.textContent;
     navigator.clipboard.writeText(text).catch(()=>{});
     btn.textContent = '✓ Copié';
     setTimeout(() => btn.textContent = '📋 Copier', 1500);
@@ -734,8 +756,47 @@
     sendMessage();
   }
 
-  function showImageGen(){
-    alert("🎨 Image : pas encore branché sur le backend. (On peut l’ajouter après)");
+  async function showImageGen(){
+    const prompt = window.prompt("Décris l'image que tu veux générer :");
+    if(!prompt) return;
+
+    if(!state.currentChatId) newChat();
+    showMessages();
+
+    const chat = state.chats[state.currentChatId];
+    chat.messages.push({role: 'user', content: `🎨 Génère une image : ${prompt}`});
+    chat.updated = Date.now();
+    saveState();
+    renderHistory();
+    addMessageElement('user', `🎨 Génère une image : ${prompt}`);
+
+    const typingEl = addMessageElement('assistant', '');
+    typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    setSendingUI(true);
+    try{
+      const res = await fetch('/api/image', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ prompt, size: '1024x1024' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur image');
+      }
+
+      const imageMessage = { type: 'image', url: data.image_url, prompt };
+      typingEl.innerHTML = formatContent(imageMessage);
+      chat.messages.push({ role: 'assistant', content: imageMessage });
+      chat.updated = Date.now();
+      saveState();
+      renderHistory();
+      typingEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }catch(err){
+      console.error(err);
+      typingEl.textContent = '❌ Erreur image : ' + (err && err.message ? err.message : 'inconnue');
+    }
+    setSendingUI(false);
   }
 
   const input = $('input');

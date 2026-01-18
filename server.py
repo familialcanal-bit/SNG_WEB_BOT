@@ -24,6 +24,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "").strip()
 GOOGLE_CSE_CX = os.getenv("GOOGLE_CSE_CX", "").strip()
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
+OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1").strip()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "").strip()
@@ -159,6 +160,25 @@ def openai_chat_once(message: str, lang: str) -> str:
         temperature=0.7,
     )
     return (resp.choices[0].message.content or "").strip()
+
+
+def openai_image_once(prompt: str, size: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    resp = client.images.generate(
+        model=OPENAI_IMAGE_MODEL,
+        prompt=prompt,
+        size=size,
+    )
+    data = resp.data[0]
+    b64_json = getattr(data, "b64_json", None) or data.get("b64_json")
+    if not b64_json:
+        raise RuntimeError("Image non disponible")
+    return f"data:image/png;base64,{b64_json}"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -429,6 +449,28 @@ async def regenerate(payload: Dict[str, Any] = Body(...)):
         f"{system_prompt_for(lang)}\n\nRéécris le message en gardant le sens, plus clair et plus utile:\n\n{text}"
     )
     return {"ok": True, "new_text": new_text, "error": None}
+
+
+# ─────────────────────────────────────────────────────────────
+# IMAGE GENERATION
+# ─────────────────────────────────────────────────────────────
+@app.post("/api/image")
+async def generate_image(payload: Dict[str, Any] = Body(...)):
+    prompt = (payload.get("prompt") or "").strip()
+    size = (payload.get("size") or "1024x1024").strip()
+    if not prompt:
+        return JSONResponse({"ok": False, "error": "prompt_vide"}, status_code=400)
+
+    valid_sizes = {"256x256", "512x512", "1024x1024", "1024x1792", "1792x1024"}
+    if size not in valid_sizes:
+        return JSONResponse({"ok": False, "error": "size_invalide"}, status_code=400)
+
+    try:
+        image_url = openai_image_once(prompt, size)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "image_url": image_url, "error": None}
 
 
 # ─────────────────────────────────────────────────────────────
