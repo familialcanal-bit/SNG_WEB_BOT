@@ -122,25 +122,12 @@ def detect_language(text: str) -> str:
 
 
 def system_prompt_for(lang: str) -> str:
-    if lang == "es":
-        return (
-            "Eres SNGSLUISGUZMAN AI. Responde SOLO en español. "
-            "Sé natural, conversacional y muy útil. Explica con claridad, "
-            "da pasos concretos cuando sea necesario y pide precisión si falta contexto. "
-            "Mantén un tono amable y profesional."
-        )
-    if lang == "en":
-        return (
-            "You are SNGSLUISGUZMAN AI. Reply ONLY in English. "
-            "Be natural, conversational, and highly helpful. Explain clearly, "
-            "offer concrete steps when useful, and ask for clarification if context is missing. "
-            "Keep a friendly, professional tone."
-        )
     return (
-        "Tu es SNGSLUISGUZMAN AI. Réponds UNIQUEMENT en français. "
-        "Sois naturel, conversationnel et très utile. Explique clairement, "
-        "donne des étapes concrètes si nécessaire et demande des précisions si le contexte manque. "
-        "Garde un ton aimable et professionnel."
+        "You are SNGSLUISGUZMAN AI. Reply in the user's language. "
+        "Be natural, conversational, and highly helpful. Explain clearly, "
+        "offer concrete steps when useful, and ask for clarification if context is missing. "
+        "Keep a friendly, professional tone. "
+        "Do not claim you can do anything outside your capabilities."
     )
 
 
