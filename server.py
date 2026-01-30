@@ -28,6 +28,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
 OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1").strip()
 OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "gpt-4o-mini-tts").strip()
 OPENAI_TTS_VOICE = os.getenv("OPENAI_TTS_VOICE", "alloy").strip()
+OPENAI_STT_MODEL = os.getenv("OPENAI_STT_MODEL", "whisper-1").strip()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "").strip()
@@ -219,6 +220,33 @@ def openai_tts_once(text: str, voice: str) -> str:
 
     b64_audio = base64.b64encode(audio_bytes).decode("utf-8")
     return f"data:audio/mpeg;base64,{b64_audio}"
+
+
+def parse_data_url(data_url: str) -> bytes:
+    if not data_url.startswith("data:"):
+        raise ValueError("data_url_invalide")
+    try:
+        header, b64_data = data_url.split(",", 1)
+    except ValueError as exc:
+        raise ValueError("data_url_invalide") from exc
+    if ";base64" not in header:
+        raise ValueError("data_url_invalide")
+    return base64.b64decode(b64_data)
+
+
+def openai_stt_once(audio_data_url: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY manquante")
+
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    audio_bytes = parse_data_url(audio_data_url)
+    resp = client.audio.transcriptions.create(
+        model=OPENAI_STT_MODEL,
+        file=("audio.webm", audio_bytes),
+    )
+    return (resp.text or "").strip()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -597,6 +625,20 @@ async def tts(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     return {"ok": True, "audio_url": audio_url, "error": None}
+
+
+@app.post("/api/audio_transcribe")
+async def audio_transcribe(payload: Dict[str, Any] = Body(...)):
+    audio_data_url = (payload.get("audio_data_url") or "").strip()
+    if not audio_data_url:
+        return JSONResponse({"ok": False, "error": "audio_vide"}, status_code=400)
+
+    try:
+        text = openai_stt_once(audio_data_url)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
+    return {"ok": True, "text": text, "error": None}
 
 
 # ─────────────────────────────────────────────────────────────

@@ -622,6 +622,7 @@
         <div class="input-tools">
           <button class="tool-btn" type="button" onclick="showImageGen()" title="Image (à brancher)">🎨</button>
           <button class="tool-btn" type="button" onclick="openImageUpload()" title="Envoyer une image">📷</button>
+          <button class="tool-btn" type="button" onclick="toggleRecording()" title="Message vocal">🎙️</button>
           <input class="file-input" id="imageUpload" type="file" accept="image/*" />
         </div>
 
@@ -962,15 +963,10 @@
     $('sendBtn').disabled = isSending;
   }
 
-  async function sendMessage(){
-    const input = $('input');
-    const text = input.value.trim();
+  async function sendText(text){
     if(!text || state.isSending) return;
 
     if(!state.currentChatId) newChat();
-
-    input.value = '';
-    input.style.height = 'auto';
 
     showMessages();
 
@@ -991,6 +987,16 @@
     typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
 
     await fetchResponse(text, typingEl);
+  }
+
+  async function sendMessage(){
+    const input = $('input');
+    const text = input.value.trim();
+    if(!text || state.isSending) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    await sendText(text);
   }
 
   async function fetchResponse(message, element){
@@ -1143,6 +1149,74 @@
     setSendingUI(false);
   }
 
+  let mediaRecorder = null;
+  let recordedChunks = [];
+
+  async function toggleRecording(){
+    if(state.isSending) return;
+    if(mediaRecorder && mediaRecorder.state === 'recording'){
+      mediaRecorder.stop();
+      return;
+    }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      alert('Microphone non disponible.');
+      return;
+    }
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => {
+        if(e.data && e.data.size > 0) recordedChunks.push(e.data);
+      };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        await sendVoiceBlob(blob);
+      };
+      mediaRecorder.start();
+    }catch(err){
+      console.error(err);
+      alert('Microphone refusé ou indisponible.');
+    }
+  }
+
+  function readBlobAsDataUrl(blob){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('lecture_audio_failed'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function sendVoiceBlob(blob){
+    if(!blob || blob.size === 0) return;
+    setSendingUI(true);
+    try{
+      const audioDataUrl = await readBlobAsDataUrl(blob);
+      const res = await fetch('/api/audio_transcribe', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ audio_data_url: audioDataUrl })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur transcription');
+      }
+      const transcript = (data.text || '').trim();
+      if(!transcript){
+        throw new Error('Transcription vide');
+      }
+      await sendText(`🎙️ ${transcript}`);
+    }catch(err){
+      console.error(err);
+      alert('Erreur vocal : ' + (err.message || 'inconnue'));
+    }finally{
+      setSendingUI(false);
+    }
+  }
+
   const input = $('input');
   input.addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.shiftKey){
@@ -1185,6 +1259,7 @@
   window.useSuggestion = useSuggestion;
   window.showImageGen = showImageGen;
   window.openImageUpload = openImageUpload;
+  window.toggleRecording = toggleRecording;
   </script>
 
 </body>
