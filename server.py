@@ -2,6 +2,7 @@ import os
 import base64
 import json
 import asyncio
+import subprocess
 from datetime import date
 from typing import Dict, Any, List
 
@@ -63,6 +64,55 @@ async def http_get_json(url: str, params: Dict[str, Any]) -> Dict[str, Any]:
         r = await client.get(url, params=params)
         return {"status": r.status_code, "json": r.json() if r.text else {}}
 
+
+
+
+def scan_connected_devices() -> Dict[str, Any]:
+    platform_name = (os.name or "").lower()
+
+    try:
+        if platform_name == "nt":
+            cmd = [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                "Get-PnpDevice -PresentOnly | Select-Object FriendlyName,Manufacturer,Class,Status | ConvertTo-Json -Depth 2",
+            ]
+            out = subprocess.check_output(cmd, text=True, timeout=15)
+            parsed = json.loads(out) if out.strip() else []
+            if isinstance(parsed, dict):
+                parsed = [parsed]
+            devices = [
+                {
+                    "name": d.get("FriendlyName") or "Unknown",
+                    "manufacturer": d.get("Manufacturer") or "Unknown",
+                    "class": d.get("Class") or "Unknown",
+                    "status": d.get("Status") or "Unknown",
+                }
+                for d in parsed
+            ]
+            return {"platform": "windows", "devices": devices}
+
+        cmd = ["lsusb"]
+        out = subprocess.check_output(cmd, text=True, timeout=10)
+        devices = []
+        for line in out.splitlines():
+            row = line.strip()
+            if not row:
+                continue
+            name = row.split(": ", 1)[1] if ": " in row else row
+            vendor_product = row.split(" ID ", 1)[1].split(" ", 1)[0] if " ID " in row else ""
+            vendor_id = vendor_product.split(":", 1)[0] if ":" in vendor_product else ""
+            product_id = vendor_product.split(":", 1)[1] if ":" in vendor_product else ""
+            devices.append({
+                "name": name,
+                "vendor_id": vendor_id,
+                "product_id": product_id,
+                "origin": "usb",
+            })
+        return {"platform": "linux", "devices": devices}
+    except Exception as exc:
+        return {"platform": platform_name or "unknown", "devices": [], "error": str(exc)}
 
 def missing_keys() -> List[str]:
     miss = []
@@ -700,6 +750,12 @@ async def audio_transcribe(payload: Dict[str, Any] = Body(...)):
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
     return {"ok": True, "text": text, "error": None}
+
+
+@app.get("/api/devices/connected")
+async def connected_devices():
+    result = scan_connected_devices()
+    return {"ok": True, **result}
 
 
 # ─────────────────────────────────────────────────────────────

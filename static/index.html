@@ -627,6 +627,7 @@
           <button class="tool-btn" type="button" onclick="showImageGen()" title="Image (à brancher)">🎨</button>
           <button class="tool-btn" type="button" onclick="openImageUpload()" title="Envoyer une image">📷</button>
           <button class="tool-btn" type="button" onclick="toggleRecording()" title="Message vocal">🎙️</button>
+          <button class="tool-btn" type="button" onclick="scanConnectedDevices()" title="Scanner appareil connecté">🔌</button>
           <input class="file-input" id="imageUpload" type="file" accept="image/*" />
         </div>
 
@@ -1003,6 +1004,60 @@
     await sendText(text);
   }
 
+  async function scanConnectedDevices(){
+    if(state.isSending) return;
+    if(!state.currentChatId) newChat();
+    showMessages();
+
+    const chat = state.chats[state.currentChatId];
+    const ask = '🔌 Scanner les appareils connectés et afficher leur origine';
+    chat.messages.push({ role: 'user', content: ask });
+    chat.updated = Date.now();
+    saveState();
+    renderHistory();
+    addMessageElement('user', ask);
+
+    const typingEl = addMessageElement('assistant', '');
+    typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    setSendingUI(true);
+    try{
+      const res = await fetch('/api/devices/connected');
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || data.ok === false){
+        throw new Error(data.error || 'Erreur scan appareil');
+      }
+
+      const devices = Array.isArray(data.devices) ? data.devices : [];
+      if(devices.length === 0){
+        typingEl.innerHTML = formatContent('Aucun appareil détecté ou accès non disponible sur cet environnement.');
+      }else{
+        const lines = devices.slice(0, 20).map((d, i) => {
+          const name = d.name || 'Inconnu';
+          const origin = d.origin || d.class || data.platform || 'inconnu';
+          const maker = d.manufacturer || d.vendor_id || 'N/A';
+          return `${i+1}. ${name}
+   Origine: ${origin}
+   Fabricant/Vendor: ${maker}`;
+        }).join('
+
+');
+        typingEl.innerHTML = formatContent(`Appareils détectés (${devices.length}) :
+
+${lines}`);
+      }
+
+      chat.messages.push({ role: 'assistant', content: typingEl.textContent || 'Scan terminé.' });
+      chat.updated = Date.now();
+      saveState();
+      renderHistory();
+    }catch(err){
+      console.error(err);
+      typingEl.textContent = '❌ Erreur scan : ' + (err && err.message ? err.message : 'inconnue');
+    }
+    setSendingUI(false);
+  }
+
   async function fetchResponse(message, element){
     setSendingUI(true);
 
@@ -1264,6 +1319,7 @@
   window.showImageGen = showImageGen;
   window.openImageUpload = openImageUpload;
   window.toggleRecording = toggleRecording;
+  window.scanConnectedDevices = scanConnectedDevices;
   </script>
 
 </body>
