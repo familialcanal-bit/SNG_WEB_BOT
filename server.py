@@ -382,6 +382,57 @@ def is_image_request(text: str) -> bool:
     return any(k in t for k in keywords)
 
 
+def is_printer_help_request(text: str) -> bool:
+    t = (text or "").lower().strip()
+    keywords = [
+        "imprimante", "printer", "impression", "print", "bloquée", "hors ligne",
+        "paper jam", "bourrage", "cartouche", "toner", "wifi printer", "usb printer",
+        "scanner imprimante", "ne imprime pas", "n'imprime pas", "imprime rien",
+    ]
+    return any(k in t for k in keywords)
+
+
+def make_printer_diagnostic_prompt(user_message: str, lang: str) -> str:
+    if lang == "es":
+        return (
+            f"{system_prompt_for(lang)}\n\n"
+            "El usuario necesita ayuda para solucionar una impresora conectada. "
+            "Responde como técnico paso a paso con este formato: "
+            "1) Diagnóstico rápido (3 posibles causas), "
+            "2) Verificaciones inmediatas (USB/Wi‑Fi, estado en sistema, cola de impresión), "
+            "3) Reparación guiada (pasos numerados), "
+            "4) Señales de avería material, "
+            "5) Qué datos pedir al usuario para continuar. "
+            "Sé concreto y práctico.\n\n"
+            f"Mensaje usuario: {user_message}"
+        )
+    if lang == "en":
+        return (
+            f"{system_prompt_for(lang)}\n\n"
+            "The user needs help troubleshooting a connected printer. "
+            "Reply like a technician with this structure: "
+            "1) Quick diagnosis (3 likely causes), "
+            "2) Immediate checks (USB/Wi‑Fi, OS printer status, print queue), "
+            "3) Guided fix (numbered steps), "
+            "4) Hardware-failure warning signs, "
+            "5) What info to request next from the user. "
+            "Be practical and concise.\n\n"
+            f"User message: {user_message}"
+        )
+    return (
+        f"{system_prompt_for(lang)}\n\n"
+        "L'utilisateur a besoin d'aide pour diagnostiquer une imprimante connectée. "
+        "Réponds comme un technicien avec cette structure : "
+        "1) Diagnostic rapide (3 causes probables), "
+        "2) Vérifications immédiates (USB/Wi‑Fi, statut imprimante système, file d'attente), "
+        "3) Réparation guidée (étapes numérotées), "
+        "4) Signes de panne matérielle, "
+        "5) Informations à demander à l'utilisateur pour la suite. "
+        "Sois concret et actionnable.\n\n"
+        f"Message utilisateur : {user_message}"
+    )
+
+
 def normalize_image_prompt(text: str) -> str:
     t = (text or "").strip()
     lowers = t.lower()
@@ -499,6 +550,12 @@ async def chat(payload: Dict[str, Any] = Body(...)):
             return JSONResponse({"ok": False, "reply": "", "error": str(exc)}, status_code=400)
         return {"ok": True, "image_url": image_url, "prompt": prompt, "error": None}
 
+    if is_printer_help_request(message):
+        lang = detect_language(message)
+        printer_prompt = make_printer_diagnostic_prompt(message, lang)
+        reply = smart_chat_once(printer_prompt)
+        return {"ok": True, "reply": reply, "error": None}
+
     if is_news_request(message):
         lang = detect_language(message)
         items = await google_top_news("", num=6, lang=lang)
@@ -534,7 +591,11 @@ async def chat_stream(payload: Dict[str, Any] = Body(...)):
             payload = {"type": "image", "data": {"url": image_url, "prompt": prompt}}
             yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
             return
-        if is_news_request(message):
+        if is_printer_help_request(message):
+            lang = detect_language(message)
+            prompt = make_printer_diagnostic_prompt(message, lang)
+            reply = smart_chat_once(prompt)
+        elif is_news_request(message):
             lang = detect_language(message)
             items = await google_top_news("", num=6, lang=lang)
             ctx = build_news_context(items)
