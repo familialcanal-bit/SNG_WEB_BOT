@@ -102,6 +102,7 @@
       font-size:12px;transition:all 0.2s;
     }
     .top-btn:hover{background:var(--hover)}
+    .top-btn.active{background:var(--purple);border-color:var(--purple);color:#fff}
 
     .chat-container{flex:1;overflow-y:auto;display:flex;flex-direction:column}
     .chat-empty{
@@ -287,6 +288,7 @@
 
       <div class="topbar-right">
         <button class="top-btn" type="button" onclick="showImageGen()">🎨 Image</button>
+        <button class="top-btn" id="taliaBtn" type="button" onclick="toggleTaliaMode()">🌸 Talia: OFF</button>
         <button class="top-btn" type="button" onclick="clearChat()">🗑️</button>
       </div>
     </div>
@@ -648,7 +650,8 @@
     chats: {},
     currentChatId: null,
     isSending: false,
-    model: 'gpt-4o-mini'
+    model: 'gpt-4o-mini',
+    persona: 'default'
   };
 
   const $ = (id) => document.getElementById(id);
@@ -661,6 +664,7 @@
       state.chats = data.chats || {};
       state.currentChatId = data.currentChatId || null;
       state.model = data.model || 'gpt-4o-mini';
+      state.persona = data.persona || 'default';
     }catch(_e){}
   }
 
@@ -668,7 +672,8 @@
     localStorage.setItem('chatsng_state', JSON.stringify({
       chats: state.chats,
       currentChatId: state.currentChatId,
-      model: state.model
+      model: state.model,
+      persona: state.persona
     }));
   }
 
@@ -687,6 +692,20 @@
     $('modelName').textContent = isMini ? 'GPT-4o mini' : 'GPT-4o';
     $('modelBadge').textContent = isMini ? 'FAST' : 'PRO';
   }
+  function updateTaliaDisplay(){
+    const btn = $('taliaBtn');
+    if(!btn) return;
+    const on = state.persona === 'talia';
+    btn.textContent = on ? '🌸 Talia: ON' : '🌸 Talia: OFF';
+    btn.classList.toggle('active', on);
+  }
+
+  function toggleTaliaMode(){
+    state.persona = state.persona === 'talia' ? 'default' : 'talia';
+    updateTaliaDisplay();
+    saveState();
+  }
+
 
   function formatTime(timestamp){
     const now = Date.now();
@@ -1065,7 +1084,7 @@ ${lines}`);
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, persona: state.persona })
       });
 
       const data = await res.json().catch(() => ({}));
@@ -1301,6 +1320,7 @@ ${lines}`);
 
   loadState();
   updateModelDisplay();
+  updateTaliaDisplay();
   renderHistory();
 
   if(state.currentChatId && state.chats[state.currentChatId]){
@@ -1315,6 +1335,7 @@ ${lines}`);
   window.sendMessage = sendMessage;
   window.toggleSidebar = toggleSidebar;
   window.toggleModel = toggleModel;
+  window.toggleTaliaMode = toggleTaliaMode;
   window.useSuggestion = useSuggestion;
   window.showImageGen = showImageGen;
   window.openImageUpload = openImageUpload;

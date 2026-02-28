@@ -172,20 +172,30 @@ def detect_language(text: str) -> str:
     return best[1]
 
 
-def system_prompt_for(lang: str) -> str:
-    return (
+def system_prompt_for(lang: str, persona: str = "default") -> str:
+    base = (
         "You are SNGSLUISGUZMAN AI. Reply in the user's language. "
         "Be natural, conversational, and highly helpful. Explain clearly, "
         "offer concrete steps when useful, and ask for clarification if context is missing. "
         "Keep a friendly, professional tone. "
         "Do not claim you can do anything outside your capabilities."
     )
+    if persona == "talia":
+        return (
+            f"{base} "
+            "Mode TALIA actif: priorité au soutien émotionnel des utilisatrices. "
+            "Adopte un ton doux, rassurant et respectueux. "
+            "Si la personne évoque un trauma, réponds avec empathie, sans jugement, "
+            "propose des étapes de stabilisation (respiration, ancrage, demander du soutien), "
+            "et recommande une aide professionnelle en cas de danger ou de détresse intense."
+        )
+    return base
 
 
 # ─────────────────────────────────────────────────────────────
 # OPENAI
 # ─────────────────────────────────────────────────────────────
-def openai_chat_once(message: str, lang: str) -> str:
+def openai_chat_once(message: str, lang: str, persona: str = "default") -> str:
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY manquante")
 
@@ -195,7 +205,7 @@ def openai_chat_once(message: str, lang: str) -> str:
     resp = client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[
-            {"role": "system", "content": system_prompt_for(lang)},
+            {"role": "system", "content": system_prompt_for(lang, persona)},
             {"role": "user", "content": message},
         ],
         temperature=0.7,
@@ -203,7 +213,7 @@ def openai_chat_once(message: str, lang: str) -> str:
     return (resp.choices[0].message.content or "").strip()
 
 
-def openai_vision_once(prompt: str, image_data_url: str, lang: str) -> str:
+def openai_vision_once(prompt: str, image_data_url: str, lang: str, persona: str = "default") -> str:
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY manquante")
 
@@ -213,7 +223,7 @@ def openai_vision_once(prompt: str, image_data_url: str, lang: str) -> str:
     resp = client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[
-            {"role": "system", "content": system_prompt_for(lang)},
+            {"role": "system", "content": system_prompt_for(lang, persona)},
             {
                 "role": "user",
                 "content": [
@@ -302,7 +312,7 @@ def openai_stt_once(audio_data_url: str) -> str:
 # ─────────────────────────────────────────────────────────────
 # GEMINI
 # ─────────────────────────────────────────────────────────────
-def gemini_chat_once(message: str, lang: str) -> str:
+def gemini_chat_once(message: str, lang: str, persona: str = "default") -> str:
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY manquante")
 
@@ -313,7 +323,7 @@ def gemini_chat_once(message: str, lang: str) -> str:
         "contents": [
             {
                 "role": "user",
-                "parts": [{"text": f"{system_prompt_for(lang)}\n\nQuestion: {message}"}],
+                "parts": [{"text": f"{system_prompt_for(lang, persona)}\n\nQuestion: {message}"}],
             }
         ]
     }
@@ -333,7 +343,7 @@ def gemini_chat_once(message: str, lang: str) -> str:
 # ─────────────────────────────────────────────────────────────
 # MISTRAL
 # ─────────────────────────────────────────────────────────────
-def mistral_chat_once(message: str, lang: str) -> str:
+def mistral_chat_once(message: str, lang: str, persona: str = "default") -> str:
     if not MISTRAL_API_KEY:
         raise RuntimeError("MISTRAL_API_KEY manquante")
 
@@ -342,7 +352,7 @@ def mistral_chat_once(message: str, lang: str) -> str:
     payload = {
         "model": MISTRAL_MODEL,
         "messages": [
-            {"role": "system", "content": system_prompt_for(lang)},
+            {"role": "system", "content": system_prompt_for(lang, persona)},
             {"role": "user", "content": message},
         ],
         "temperature": 0.7,
@@ -359,24 +369,24 @@ def mistral_chat_once(message: str, lang: str) -> str:
 # ─────────────────────────────────────────────────────────────
 # SMART ROUTER
 # ─────────────────────────────────────────────────────────────
-def smart_chat_once(message: str) -> str:
+def smart_chat_once(message: str, persona: str = "default") -> str:
     lang = detect_language(message)
 
     try:
         if OPENAI_API_KEY:
-            return openai_chat_once(message, lang)
+            return openai_chat_once(message, lang, persona)
     except:
         pass
 
     try:
         if GEMINI_API_KEY:
-            return gemini_chat_once(message, lang)
+            return gemini_chat_once(message, lang, persona)
     except:
         pass
 
     try:
         if MISTRAL_API_KEY:
-            return mistral_chat_once(message, lang)
+            return mistral_chat_once(message, lang, persona)
     except:
         pass
 
@@ -587,6 +597,7 @@ def make_news_prompt(user_message: str, sources_text: str, lang: str) -> str:
 @app.post("/api/chat")
 async def chat(payload: Dict[str, Any] = Body(...)):
     message = (payload.get("message") or "").strip()
+    persona = (payload.get("persona") or "default").strip().lower()
     if not message:
         return JSONResponse({"ok": False, "reply": "", "error": "message_vide"}, status_code=400)
 
@@ -603,7 +614,7 @@ async def chat(payload: Dict[str, Any] = Body(...)):
     if is_printer_help_request(message):
         lang = detect_language(message)
         printer_prompt = make_printer_diagnostic_prompt(message, lang)
-        reply = smart_chat_once(printer_prompt)
+        reply = smart_chat_once(printer_prompt, persona)
         return {"ok": True, "reply": reply, "error": None}
 
     if is_news_request(message):
@@ -611,10 +622,10 @@ async def chat(payload: Dict[str, Any] = Body(...)):
         items = await google_top_news("", num=6, lang=lang)
         ctx = build_news_context(items)
         prompt = make_news_prompt(message, ctx, lang)
-        reply = smart_chat_once(prompt)
+        reply = smart_chat_once(prompt, persona)
         return {"ok": True, "reply": reply, "error": None}
 
-    reply = smart_chat_once(message)
+    reply = smart_chat_once(message, persona)
     return {"ok": True, "reply": reply, "error": None}
 
 
@@ -624,6 +635,7 @@ async def chat(payload: Dict[str, Any] = Body(...)):
 @app.post("/api/chat_stream")
 async def chat_stream(payload: Dict[str, Any] = Body(...)):
     message = (payload.get("message") or "").strip()
+    persona = (payload.get("persona") or "default").strip().lower()
     if not message:
         return JSONResponse({"detail": "message vide"}, status_code=400)
 
@@ -644,15 +656,15 @@ async def chat_stream(payload: Dict[str, Any] = Body(...)):
         if is_printer_help_request(message):
             lang = detect_language(message)
             prompt = make_printer_diagnostic_prompt(message, lang)
-            reply = smart_chat_once(prompt)
+            reply = smart_chat_once(prompt, persona)
         elif is_news_request(message):
             lang = detect_language(message)
             items = await google_top_news("", num=6, lang=lang)
             ctx = build_news_context(items)
             prompt = make_news_prompt(message, ctx, lang)
-            reply = smart_chat_once(prompt)
+            reply = smart_chat_once(prompt, persona)
         else:
-            reply = smart_chat_once(message)
+            reply = smart_chat_once(message, persona)
 
         if not reply:
             reply = "(vide)"
@@ -714,7 +726,7 @@ async def analyze_image(payload: Dict[str, Any] = Body(...)):
 
     lang = detect_language(prompt)
     try:
-        reply = openai_vision_once(prompt, image_data_url, lang)
+        reply = openai_vision_once(prompt, image_data_url, lang, "default")
     except Exception as exc:
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
