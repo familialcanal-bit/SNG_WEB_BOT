@@ -522,6 +522,44 @@ async def place_details(place_id: str = Query(..., min_length=5)):
     return {"result": js.get("result", {}), "raw": js}
 
 
+# ─────────────────────────────────────────────────────────────
+# GÉNÉRATION D'IMAGE – Pollinations.ai (gratuit, sans clé API)
+# ─────────────────────────────────────────────────────────────
+@app.get("/api/generate_image")
+async def generate_image(
+    prompt: str = Query(..., min_length=1),
+    width: int = 1024,
+    height: int = 1024,
+    seed: int = None,
+):
+    """
+    Génère une image via Pollinations.ai et retourne l'URL directe.
+    Le front-end peut afficher cette URL comme une balise <img>.
+    """
+    import urllib.parse
+
+    safe_prompt = urllib.parse.quote(prompt)
+    seed_part = f"&seed={seed}" if seed is not None else ""
+    image_url = (
+        f"https://image.pollinations.ai/prompt/{safe_prompt}"
+        f"?width={width}&height={height}&nologo=true{seed_part}"
+    )
+
+    # Vérification rapide que Pollinations répond
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.head(image_url)
+            ok = r.status_code == 200
+    except Exception:
+        ok = False
+
+    return {
+        "ok": ok,
+        "url": image_url,
+        "prompt": prompt,
+    }
+
+
 @app.get("/api/google/place_photo")
 async def place_photo(ref: str = Query(..., min_length=5), maxwidth: int = 800):
     if not GOOGLE_API_KEY:
