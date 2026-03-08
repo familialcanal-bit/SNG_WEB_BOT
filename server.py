@@ -528,35 +528,35 @@ async def place_details(place_id: str = Query(..., min_length=5)):
 @app.get("/api/generate_image")
 async def generate_image(
     prompt: str = Query(..., min_length=1),
-    width: int = 1024,
-    height: int = 1024,
-    seed: int = None,
+    width: int = Query(1024, ge=256, le=2048),
+    height: int = Query(1024, ge=256, le=2048),
+    seed: int | None = Query(None),
+    redirect: bool = Query(False),
 ):
     """
-    Génère une image via Pollinations.ai et retourne l'URL directe.
-    Le front-end peut afficher cette URL comme une balise <img>.
+    Génère une URL Pollinations.
+    - mode JSON (par défaut): retourne {ok, url, prompt, width, height, seed}
+    - mode redirect (?redirect=true): redirige directement vers l'image
     """
     import urllib.parse
 
-    safe_prompt = urllib.parse.quote(prompt)
+    safe_prompt = urllib.parse.quote(prompt, safe="")
     seed_part = f"&seed={seed}" if seed is not None else ""
     image_url = (
         f"https://image.pollinations.ai/prompt/{safe_prompt}"
         f"?width={width}&height={height}&nologo=true{seed_part}"
     )
 
-    # Vérification rapide que Pollinations répond
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            r = await client.head(image_url)
-            ok = r.status_code == 200
-    except Exception:
-        ok = False
+    if redirect:
+        return RedirectResponse(image_url)
 
     return {
-        "ok": ok,
+        "ok": True,
         "url": image_url,
         "prompt": prompt,
+        "width": width,
+        "height": height,
+        "seed": seed,
     }
 
 
