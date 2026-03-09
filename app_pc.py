@@ -1,41 +1,40 @@
 import os
 import time
 import threading
-import webview
-import uvicorn
 
-def run_server():
-    # Lance ton FastAPI depuis server.py -> app
+import uvicorn
+import webview
+
+
+HOST = "127.0.0.1"
+PORT = 8000
+URL = f"http://{HOST}:{PORT}"
+
+
+def run_server() -> None:
     uvicorn.run(
         "server:app",
-        host="127.0.0.1",
-        port=8000,
-        log_level="warning"
+        host=HOST,
+        port=PORT,
+        reload=False,
+        log_level="warning",
     )
 
-import webview
 
 if __name__ == "__main__":
-    webview.create_window(
-        "SNGSLUISGUZMAN - AI",
-        "http://127.0.0.1:8000",
-        width=1200,
-        height=800
-    )
-    webview.start()
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    # Petite attente pour laisser le serveur démarrer
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+
     time.sleep(1.2)
 
-    # Ouvre la fenêtre PC (WebView)
     webview.create_window(
         "SNGSLUISGUZMAN - AI",
-        "http://127.0.0.1:8000",
+        URL,
         width=1200,
         height=800,
         min_size=(900, 650),
+        resizable=True,
     )
     webview.start()
-import webview
-
-
