@@ -1,9 +1,8 @@
 import subprocess
 import sys
 import time
+import webbrowser
 from pathlib import Path
-
-import webview
 
 HOST = "127.0.0.1"
 PORT = 8000
@@ -19,10 +18,16 @@ def main() -> None:
         cwd=str(project_dir),
     )
 
-    time.sleep(3)
+    time.sleep(2.5)
 
-    webview.create_window("SNG WEB BOT", URL, width=1100, height=700)
-    webview.start()
+    try:
+        import webview  # type: ignore
+
+        webview.create_window("SNG WEB BOT", URL, width=1100, height=700)
+        webview.start()
+    except Exception:
+        webbrowser.open(URL)
+        print(f"pywebview indisponible, ouverture navigateur: {URL}")
 
 
 if __name__ == "__main__":
