@@ -325,8 +325,8 @@
     try{
       const data = JSON.parse(saved);
       state.chats = (data && typeof data.chats === 'object' && data.chats) ? data.chats : {};
-      state.currentChatId = (typeof data?.currentChatId === 'string') ? data.currentChatId : null;
-      state.portfolio = Array.isArray(data?.portfolio) ? data.portfolio : [];
+      state.currentChatId = (data && typeof data.currentChatId === 'string') ? data.currentChatId : null;
+      state.portfolio = (data && Array.isArray(data.portfolio)) ? data.portfolio : [];
     }catch(_e){
       state.chats = {};
       state.currentChatId = null;
@@ -379,11 +379,11 @@
 
   function escapeHTML(str){
     return String(str)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'","&#039;");
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/\"/g,'&quot;')
+      .replace(/'/g,'&#039;');
   }
 
   function formatContent(text){
@@ -660,9 +660,9 @@
 
     for(const raw of state.portfolio){
       const item = {
-        symbol: String(raw?.symbol || '').toUpperCase(),
-        qty: Number(raw?.qty || 0),
-        entry: Number(raw?.entry || 0)
+        symbol: String((raw && raw.symbol) || '').toUpperCase(),
+        qty: Number((raw && raw.qty) || 0),
+        entry: Number((raw && raw.entry) || 0)
       };
       if(!item.symbol || item.qty <= 0 || item.entry <= 0) continue;
       const match = state.opportunities.find(o => o.symbol === item.symbol);
