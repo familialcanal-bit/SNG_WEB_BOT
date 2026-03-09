@@ -83,18 +83,6 @@
       display:flex;align-items:center;justify-content:center;font-size:18px;
     }
     .menu-btn:hover{background:var(--hover)}
-    .model-selector{
-      padding:8px 14px;border-radius:8px;border:1px solid var(--border);
-      background:transparent;color:var(--text);cursor:pointer;
-      font-size:13px;font-weight:600;transition:all 0.2s;
-      display:flex;align-items:center;gap:8px;
-    }
-    .model-selector:hover{background:var(--hover)}
-    .model-badge{
-      padding:2px 8px;border-radius:12px;
-      background:var(--accent);color:#fff;font-size:10px;
-      text-transform:uppercase;font-weight:700;
-    }
     .topbar-right{display:flex;align-items:center;gap:8px}
     .top-btn{
       padding:8px 12px;border-radius:6px;border:1px solid var(--border);
@@ -118,6 +106,17 @@
     .chat-title{font-size:32px;font-weight:700;margin-bottom:12px}
     .chat-subtitle{font-size:16px;color:var(--textDim);margin-bottom:32px}
     .suggestions{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;max-width:900px;width:100%}
+    .crypto-panel{width:min(1000px,100%);background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:20px}
+    .crypto-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+    .crypto-score{font-size:13px;color:var(--textDim)}
+    .crypto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;max-height:280px;overflow:auto;padding-right:4px}
+    .opp-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px;cursor:pointer}
+    .opp-card:hover{border-color:var(--accent)}
+    .opp-top{display:flex;justify-content:space-between;font-size:12px;color:var(--textDim)}
+    .opp-price{font-size:18px;font-weight:700;margin:8px 0}
+    .hot{color:#f97316;font-weight:700}
+    .portfolio{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+    .portfolio-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:var(--textDim)}
     .suggestion{
       padding:16px;border-radius:12px;border:1px solid var(--border);
       background:var(--panel);cursor:pointer;transition:all 0.2s;text-align:left;
@@ -238,10 +237,6 @@
       <div class="topbar-left">
         <button class="menu-btn" type="button" onclick="toggleSidebar()" aria-label="Ouvrir/Fermer le menu">☰</button>
 
-        <button class="model-selector" type="button" onclick="toggleModel()">
-          <span id="modelName">GPT-4o mini</span>
-          <span class="model-badge" id="modelBadge">FAST</span>
-        </button>
       </div>
 
       <div class="topbar-right">
@@ -255,6 +250,22 @@
         <div class="chat-logo">SNG</div>
         <div class="chat-title">Comment puis-je t'aider ?</div>
         <div class="chat-subtitle">Pose-moi n'importe quelle question</div>
+
+        
+        <div class="crypto-panel">
+          <div class="crypto-head">
+            <strong>🚀 CryptoMind AI — Opportunités temps réel</strong>
+            <div class="crypto-score" id="marketScore">Score marché: --</div>
+          </div>
+          <div class="crypto-grid" id="cryptoGrid"></div>
+          <div class="portfolio">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <strong>💼 Portefeuille</strong>
+              <button class="msg-btn" type="button" onclick="addPortfolioAsset()">+ Ajouter</button>
+            </div>
+            <div id="portfolioList"></div>
+          </div>
+        </div>
 
         <div class="suggestions">
           <div class="suggestion" onclick="useSuggestion('Code un site web moderne responsive')">
@@ -302,7 +313,8 @@
     chats: {},
     currentChatId: null,
     isSending: false,
-    model: 'gpt-4o-mini'
+    opportunities: [],
+    portfolio: []
   };
 
   const $ = (id) => document.getElementById(id);
@@ -314,7 +326,7 @@
       const data = JSON.parse(saved);
       state.chats = data.chats || {};
       state.currentChatId = data.currentChatId || null;
-      state.model = data.model || 'gpt-4o-mini';
+      state.portfolio = data.portfolio || [];
     }catch(_e){}
   }
 
@@ -322,7 +334,7 @@
     localStorage.setItem('chatsng_state', JSON.stringify({
       chats: state.chats,
       currentChatId: state.currentChatId,
-      model: state.model
+      portfolio: state.portfolio
     }));
   }
 
@@ -330,17 +342,6 @@
     $('sidebar').classList.toggle('collapsed');
   }
 
-  function toggleModel(){
-    state.model = (state.model === 'gpt-4o-mini') ? 'gpt-4o' : 'gpt-4o-mini';
-    updateModelDisplay();
-    saveState();
-  }
-
-  function updateModelDisplay(){
-    const isMini = state.model === 'gpt-4o-mini';
-    $('modelName').textContent = isMini ? 'GPT-4o mini' : 'GPT-4o';
-    $('modelBadge').textContent = isMini ? 'FAST' : 'PRO';
-  }
 
   function formatTime(timestamp){
     const now = Date.now();
@@ -623,6 +624,104 @@
     setSendingUI(false);
   }
 
+
+  function renderOpportunities(){
+    const grid = $('cryptoGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+
+    const top = state.opportunities.slice(0, 12);
+    for(const opp of top){
+      const card = document.createElement('div');
+      card.className = 'opp-card';
+      card.innerHTML = `
+        <div class="opp-top"><span>${opp.symbol}/${opp.exchange}</span><span>${opp.score >= 75 ? '<span class="hot">🔥 HOT</span>' : opp.score.toFixed(1)}</span></div>
+        <div class="opp-price">$${Number(opp.price).toLocaleString()}</div>
+        <div class="opp-top"><span>24h: ${opp.change_24h}%</span><span>Spread: ${opp.spread_pct}%</span></div>
+      `;
+      card.addEventListener('click', ()=>analyzeOpportunity(opp));
+      grid.appendChild(card);
+    }
+  }
+
+  function renderPortfolio(){
+    const list = $('portfolioList');
+    if(!list) return;
+    list.innerHTML = '';
+    if(!state.portfolio.length){
+      list.innerHTML = '<div class="portfolio-row"><span>Aucune position</span><span>Ajoute une crypto</span></div>';
+      return;
+    }
+
+    for(const item of state.portfolio){
+      const match = state.opportunities.find(o => o.symbol === item.symbol);
+      const now = match ? Number(match.price) : item.entry;
+      const pnl = ((now - item.entry) * item.qty);
+      const row = document.createElement('div');
+      row.className = 'portfolio-row';
+      row.innerHTML = `<span>${item.symbol} (${item.qty})</span><span>${pnl >=0 ? '+' : ''}$${pnl.toFixed(2)}</span>`;
+      list.appendChild(row);
+    }
+  }
+
+  async function refreshCrypto(){
+    try{
+      const res = await fetch('/api/crypto/opportunities');
+      const data = await res.json();
+      state.opportunities = data.opportunities || [];
+      $('marketScore').textContent = `Score marché: ${data.market_score || '--'}/100`;
+      renderOpportunities();
+      renderPortfolio();
+    }catch(err){
+      console.error('crypto refresh', err);
+    }
+  }
+
+  async function analyzeOpportunity(opp){
+    if(!opp) return;
+    const question = `Analyse ${opp.symbol} sur ${opp.exchange} et donne un plan d'action.`;
+    $('input').value = question;
+    if(!state.currentChatId) newChat();
+    showMessages();
+    addMessageElement('user', question);
+    const typingEl = addMessageElement('assistant', '');
+    typingEl.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    try{
+      const res = await fetch('/api/crypto/analyze', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ opportunity: opp })
+      });
+      const data = await res.json();
+      const reply = data.reply || 'Analyse indisponible.';
+      typingEl.innerHTML = formatContent(reply);
+
+      const chat = state.chats[state.currentChatId];
+      chat.messages.push({role:'user', content:question});
+      chat.messages.push({role:'assistant', content:reply});
+      chat.updated = Date.now();
+      if(chat.messages.length === 2) chat.title = `${opp.symbol} ${opp.exchange}`;
+      saveState();
+      renderHistory();
+    }catch(err){
+      typingEl.textContent = '❌ Erreur analyse crypto.';
+    }
+  }
+
+  function addPortfolioAsset(){
+    const symbolInput = prompt('Symbole (ex: BTC)') || '';
+    const symbol = symbolInput.toUpperCase().trim();
+    if(!symbol) return;
+    const qty = Number(prompt('Quantité', '1'));
+    if(!qty || qty <= 0) return;
+    const match = state.opportunities.find(o => o.symbol === symbol);
+    const entry = match ? Number(match.price) : Number(prompt('Prix d'entrée USD', '0'));
+    if(!entry || entry <= 0) return;
+    state.portfolio.push({symbol, qty, entry});
+    saveState();
+    renderPortfolio();
+  }
+
   function useSuggestion(text){
     $('input').value = text;
     sendMessage();
@@ -645,8 +744,10 @@
   });
 
   loadState();
-  updateModelDisplay();
   renderHistory();
+
+  refreshCrypto();
+  setInterval(refreshCrypto, 4000);
 
   if(state.currentChatId && state.chats[state.currentChatId]){
     showMessages();
@@ -659,9 +760,9 @@
   window.clearChat = clearChat;
   window.sendMessage = sendMessage;
   window.toggleSidebar = toggleSidebar;
-  window.toggleModel = toggleModel;
   window.useSuggestion = useSuggestion;
   window.showImageGen = showImageGen;
+  window.addPortfolioAsset = addPortfolioAsset;
   </script>
 
 </body>
