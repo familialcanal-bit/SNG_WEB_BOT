@@ -324,10 +324,15 @@
     if(!saved) return;
     try{
       const data = JSON.parse(saved);
-      state.chats = data.chats || {};
-      state.currentChatId = data.currentChatId || null;
-      state.portfolio = data.portfolio || [];
-    }catch(_e){}
+      state.chats = (data && typeof data.chats === 'object' && data.chats) ? data.chats : {};
+      state.currentChatId = (typeof data?.currentChatId === 'string') ? data.currentChatId : null;
+      state.portfolio = Array.isArray(data?.portfolio) ? data.portfolio : [];
+    }catch(_e){
+      state.chats = {};
+      state.currentChatId = null;
+      state.portfolio = [];
+      localStorage.removeItem('chatsng_state');
+    }
   }
 
   function saveState(){
@@ -653,7 +658,13 @@
       return;
     }
 
-    for(const item of state.portfolio){
+    for(const raw of state.portfolio){
+      const item = {
+        symbol: String(raw?.symbol || '').toUpperCase(),
+        qty: Number(raw?.qty || 0),
+        entry: Number(raw?.entry || 0)
+      };
+      if(!item.symbol || item.qty <= 0 || item.entry <= 0) continue;
       const match = state.opportunities.find(o => o.symbol === item.symbol);
       const now = match ? Number(match.price) : item.entry;
       const pnl = ((now - item.entry) * item.qty);
@@ -669,7 +680,8 @@
       const res = await fetch('/api/crypto/opportunities');
       const data = await res.json();
       state.opportunities = data.opportunities || [];
-      $('marketScore').textContent = `Score marché: ${data.market_score || '--'}/100`;
+      const marketEl = $('marketScore');
+      if(marketEl) marketEl.textContent = `Score marché: ${data.market_score || '--'}/100`;
       renderOpportunities();
       renderPortfolio();
     }catch(err){
@@ -743,15 +755,25 @@
     input.style.height = Math.min(input.scrollHeight, 200) + 'px';
   });
 
-  loadState();
-  renderHistory();
+  try{
+    loadState();
+    renderHistory();
 
-  refreshCrypto();
-  setInterval(refreshCrypto, 4000);
+    refreshCrypto();
+    setInterval(refreshCrypto, 4000);
 
-  if(state.currentChatId && state.chats[state.currentChatId]){
-    showMessages();
-  }else{
+    if(state.currentChatId && state.chats[state.currentChatId]){
+      showMessages();
+    }else{
+      showEmpty();
+    }
+  }catch(err){
+    console.error('Init error', err);
+    localStorage.removeItem('chatsng_state');
+    state.chats = {};
+    state.currentChatId = null;
+    state.portfolio = [];
+    renderHistory();
     showEmpty();
   }
 
