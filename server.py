@@ -60,12 +60,6 @@ async def http_get_json(url: str, params: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": r.status_code, "json": r.json() if r.text else {}}
 
 
-def _safe_float(value: Any, default: float = 0.0) -> float:
-    try:
-        return float(value)
-    except Exception:
-        return default
-
 
 def missing_keys() -> List[str]:
     miss = []
@@ -244,30 +238,8 @@ def smart_chat_once(message: str) -> str:
     except:
         pass
 
-    return local_fallback_reply(message, lang)
+    return "⚠️ Aucune IA disponible."
 
-
-
-
-def local_fallback_reply(message: str, lang: str) -> str:
-    msg = (message or '').strip()
-    if lang == 'es':
-        return (
-            "No tengo una clave IA activa por ahora, pero sigo operativo.\n"
-            f"Tu mensaje: {msg}\n\n"
-            "Puedo ayudarte con: resumen, reescritura, plan de acción, checklist y priorización."
-        )
-    if lang == 'en':
-        return (
-            "I don't have an active AI provider key right now, but I'm still operational.\n"
-            f"Your message: {msg}\n\n"
-            "I can still help with: summaries, rewrites, action plans, checklists, and prioritization."
-        )
-    return (
-        "Je n'ai pas de clé IA active pour le moment, mais je reste opérationnel.\n"
-        f"Ton message : {msg}\n\n"
-        "Je peux déjà t'aider avec : résumé, reformulation, plan d'action, checklist et priorisation."
-    )
 
 
 # ─────────────────────────────────────────────────────────────
