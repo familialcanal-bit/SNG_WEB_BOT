@@ -18,16 +18,9 @@ def main() -> None:
         cwd=str(project_dir),
     )
 
-    time.sleep(2.5)
-
-    try:
-        import webview  # type: ignore
-
-        webview.create_window("SNG WEB BOT", URL, width=1100, height=700)
-        webview.start()
-    except Exception:
-        webbrowser.open(URL)
-        print(f"pywebview indisponible, ouverture navigateur: {URL}")
+    time.sleep(2)
+    webbrowser.open(URL)
+    print(f"Interface ouverte: {URL}")
 
 
 if __name__ == "__main__":
