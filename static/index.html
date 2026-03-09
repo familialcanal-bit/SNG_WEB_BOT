@@ -715,7 +715,7 @@
     const qty = Number(prompt('Quantité', '1'));
     if(!qty || qty <= 0) return;
     const match = state.opportunities.find(o => o.symbol === symbol);
-    const entry = match ? Number(match.price) : Number(prompt('Prix d'entrée USD', '0'));
+    const entry = match ? Number(match.price) : Number(prompt("Prix d'entrée USD", '0'));
     if(!entry || entry <= 0) return;
     state.portfolio.push({symbol, qty, entry});
     saveState();
